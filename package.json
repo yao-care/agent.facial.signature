@@ -11,9 +11,10 @@
     "serve:node": "npx http-server -p 8000 -c-1"
   },
   "devDependencies": {
-    "vitest": "^1.6.0",
     "fake-indexeddb": "^6.0.0",
+    "happy-dom": "^15.0.0",
+    "idb": "^8.0.3",
     "jsdom": "^25.0.0",
-    "happy-dom": "^15.0.0"
+    "vitest": "^1.6.0"
   }
 }
