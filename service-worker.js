@@ -34,6 +34,7 @@ const APP_SHELL = [
   '/shared/face-alert-template.js',
   '/shared/single-tab-lock.js',
   '/shared/persistent-storage.js',
+  '/shared/sw-register.js',
   '/shared/util-ulid.js',
   '/shared/util-cosine.js',
   '/shared/admin/admin-shell.js',
