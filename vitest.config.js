@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '../vendor/idb/idb.min.js': 'idb',
+      '../vendor/fflate/fflate.module.js': 'fflate',
       '../vendor/human/human.esm.js': resolve(__dirname, 'tests/stubs/human.js'),
     },
   },
