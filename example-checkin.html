@@ -15,7 +15,9 @@
 <body>
   <div id="app"></div>
   <script type="module">
+    import { registerSW } from './shared/sw-register.js';
     import { runCheckin } from './shared/face-checkin-template.js';
+    registerSW();
     const config = await fetch('./configs/example-checkin.json').then(r => r.json());
     runCheckin(config, document.getElementById('app'));
   </script>

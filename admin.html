@@ -19,7 +19,9 @@
   </header>
   <main id="admin-main"></main>
   <script type="module">
+    import { registerSW } from './shared/sw-register.js';
     import { mountAdmin } from './shared/admin/admin-shell.js';
+    registerSW();
     mountAdmin(document.getElementById('admin-main'));
   </script>
 </body>

@@ -15,7 +15,9 @@
 <body>
   <div id="app"></div>
   <script type="module">
+    import { registerSW } from './shared/sw-register.js';
     import { runAlert } from './shared/face-alert-template.js';
+    registerSW();
     const config = await fetch('./configs/example-watchlist.json').then(r => r.json());
     runAlert(config, document.getElementById('app'));
   </script>
