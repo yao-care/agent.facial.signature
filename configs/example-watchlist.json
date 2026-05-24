@@ -1,0 +1,14 @@
+{
+  "scenarioId": "example-alert",
+  "scenarioName": "示範警示場景",
+  "uiTheme": { "primary": "#dc2626", "background": "#fef2f2" },
+  "watchlistId": "demo-watchlist",
+  "concurrency": "multi-face",
+  "dedupWindowMs": 60000,
+  "alertSound": {
+    "url": "",
+    "mode": "once",
+    "repeatUntilDismissed": false
+  },
+  "alertMessage": "高風險名單命中，請工作人員注意"
+}

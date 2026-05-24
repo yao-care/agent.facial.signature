@@ -1,0 +1,27 @@
+{
+  "scenarioId": "example-checkin",
+  "scenarioName": "示範簽到場景",
+  "uiTheme": { "primary": "#22c55e", "background": "#f8fafc" },
+  "trigger": "auto",
+  "concurrency": "multi-face",
+  "dedupWindowMs": 30000,
+  "consentNotice": {
+    "enabled": true,
+    "message": "本系統將擷取您的人臉特徵以進行簽到，資料留在本機。是否同意？",
+    "requireExplicitConsent": true
+  },
+  "extraFields": [
+    {
+      "key": "withFamily",
+      "label": "家屬陪同",
+      "type": "bool",
+      "scope": "event",
+      "collectOn": "every",
+      "required": false
+    }
+  ],
+  "tts": {
+    "enabled": true,
+    "templateNamed": "{name} 您好，歡迎光臨！"
+  }
+}
