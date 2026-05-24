@@ -1,5 +1,7 @@
-import { createRequire } from 'module';
-var require = createRequire('/');
+// Patched for browser: removed Node-only `import { createRequire } from 'module'`.
+// fflate uses `require` only to lazy-load worker_threads for parallel APIs (inside try/catch).
+// We use sync zipSync/unzipSync only, so leaving `require` undefined is safe.
+var require;
 // DEFLATE is a complex format; to read this code, you should probably check the RFC first:
 // https://tools.ietf.org/html/rfc1951
 // You may also wish to take a look at the guide I made about this program:
