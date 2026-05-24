@@ -1,7 +1,8 @@
 export async function registerSW() {
   if (!('serviceWorker' in navigator)) return;
   try {
-    const reg = await navigator.serviceWorker.register('/service-worker.js', { scope: '/' });
+    // Relative paths so the app works on root, GH Pages subpath, or any subdir
+    const reg = await navigator.serviceWorker.register('./service-worker.js', { scope: './' });
     reg.addEventListener('updatefound', () => {
       const newWorker = reg.installing;
       newWorker?.addEventListener('statechange', () => {
