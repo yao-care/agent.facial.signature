@@ -5,6 +5,15 @@ import { acquireSingleTabLock } from './single-tab-lock.js';
 import { requestPersistentStorage } from './persistent-storage.js';
 
 export async function runAlert(config, rootEl) {
+  try {
+    return await runAlertInner(config, rootEl);
+  } catch (err) {
+    console.error('[alert] startup failed:', err);
+    rootEl.innerHTML = `<div class="error">啟動失敗：${escape(err.message || String(err))}<br><small>請開啟瀏覽器 DevTools 查看 console 詳情</small></div>`;
+  }
+}
+
+async function runAlertInner(config, rootEl) {
   if (location.protocol === 'file:') {
     rootEl.innerHTML = `<div class="error">請使用 HTTPS 或加入主畫面開啟</div>`;
     return;
@@ -35,7 +44,12 @@ export async function runAlert(config, rootEl) {
     return;
   }
 
-  await ui.setupCamera(video);
+  try {
+    await ui.setupCamera(video);
+  } catch (err) {
+    rootEl.innerHTML = `<div class="error">無法開啟攝影機：${escape(err.message)}。請確認瀏覽器已授權相機、且沒有其他程式佔用。</div>`;
+    return;
+  }
   ui.createOverlayCanvas(video, camContainer);
 
   const tuning = await store.getTuning(db);

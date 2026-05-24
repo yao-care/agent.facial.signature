@@ -10,6 +10,15 @@ import { requestPersistentStorage } from './persistent-storage.js';
 import { accumulateVectors } from './face-store.js';
 
 export async function runCheckin(config, rootEl) {
+  try {
+    return await runCheckinInner(config, rootEl);
+  } catch (err) {
+    console.error('[checkin] startup failed:', err);
+    rootEl.innerHTML = `<div class="error">啟動失敗：${escape(err.message || String(err))}<br><small>請開啟瀏覽器 DevTools 查看 console 詳情</small></div>`;
+  }
+}
+
+async function runCheckinInner(config, rootEl) {
   // 1. 環境檢查 — file:// protocol 不支援攝影機
   if (location.protocol === 'file:') {
     rootEl.innerHTML = `<div class="error">請使用 HTTPS 或加入主畫面以 PWA 開啟（file:// 不支援攝影機）</div>`;
@@ -43,7 +52,12 @@ export async function runCheckin(config, rootEl) {
 
   // 5. 開啟資料庫 + 設置相機 + overlay canvas
   const db = await store.openFaceDb();
-  await ui.setupCamera(video);
+  try {
+    await ui.setupCamera(video);
+  } catch (err) {
+    rootEl.innerHTML = `<div class="error">無法開啟攝影機：${escape(err.message)}。請確認瀏覽器已授權相機、且沒有其他程式佔用。</div>`;
+    return;
+  }
   const overlay = ui.createOverlayCanvas(video, camContainer);
 
   // 6. 啟動引擎 — 帶 tuning 參數、支援 single-roi 並行模式
