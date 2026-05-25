@@ -66,23 +66,19 @@ export async function match(db, queryVectors, modelVersion, opts = {}) {
   return new Promise((resolve, reject) => {
     pending.set(id, { resolve, reject });
 
-    // Collect transferable buffers from queryVectors and people vectors
-    const transferables = queryVectors
-      .map(v => v.buffer)
-      .concat(samePeople.flatMap(p => p.vectors.map(v => v.buffer)));
-
-    worker.postMessage(
-      {
-        id,
-        type: 'match',
-        payload: {
-          queryVectors,
-          people: samePeople,
-          tuning,
-          candidatePersonIds: opts.candidatePersonIds,
-        },
+    // No transferables — structured clone copies the Float32Array buffers.
+    // We previously transferred, but result.vectors is also written to IDB after match()
+    // returns, and transferred buffers become detached. The clone cost is small
+    // (~hundreds of KB per call) and worth the safety.
+    worker.postMessage({
+      id,
+      type: 'match',
+      payload: {
+        queryVectors,
+        people: samePeople,
+        tuning,
+        candidatePersonIds: opts.candidatePersonIds,
       },
-      transferables
-    );
+    });
   });
 }

@@ -1,16 +1,36 @@
 import * as store from '../face-store.js';
 
+const MODE_LABELS = { checkin: '簽到', alert: '警示' };
+const DECISION_LABELS = {
+  match: '命中',
+  new: '新人',
+  fuzzy: '模糊',
+  'alert-hit': '警示命中',
+};
+const SCOPE_LABELS = { global: '全庫', watchlist: '名單' };
+const REVIEW_LABELS = { assigned: '已指派', created: '已建檔', ignored: '已忽略' };
+
 export async function mountEventsTab(root, db) {
   root.innerHTML = `
     <div class="filter-row">
-      <label>mode <select id="f-mode"><option value="all">全部</option><option>checkin</option><option>alert</option></select></label>
-      <label>decision <select id="f-decision"><option value="all">全部</option><option>match</option><option>new</option><option>fuzzy</option><option>alert-hit</option></select></label>
-      <label><input type="checkbox" id="f-needsReview"> 僅未審 fuzzy</label>
-      <input id="f-scenario" placeholder="scenario">
+      <label>類型 <select id="f-mode">
+        <option value="all">全部</option>
+        <option value="checkin">簽到</option>
+        <option value="alert">警示</option>
+      </select></label>
+      <label>結果 <select id="f-decision">
+        <option value="all">全部</option>
+        <option value="match">命中</option>
+        <option value="new">新人</option>
+        <option value="fuzzy">模糊</option>
+        <option value="alert-hit">警示命中</option>
+      </select></label>
+      <label><input type="checkbox" id="f-needsReview"> 僅未審「模糊」紀錄</label>
+      <input id="f-scenario" placeholder="場合名稱">
     </div>
     <table class="admin-table">
       <thead><tr>
-        <th>快照</th><th>時間</th><th>場合</th><th>mode</th><th>decision</th><th>personId</th><th>similarity</th><th>狀態</th><th>操作</th>
+        <th>快照</th><th>時間</th><th>場合</th><th>類型</th><th>結果</th><th>人員編號</th><th>相似度</th><th>狀態</th><th>操作</th>
       </tr></thead>
       <tbody id="ev-tbody"></tbody>
     </table>
@@ -37,18 +57,21 @@ export async function mountEventsTab(root, db) {
       const tr = document.createElement('tr');
       if (e.needsReview) tr.style.background = '#fef3c7';
       const snap = e.snapshotId ? await safeReadSnapshot(e.snapshotId) : null;
+      const outcomeLabel = e.needsReview
+        ? '待審'
+        : (REVIEW_LABELS[e.meta?.reviewOutcome] || '已處理');
       tr.innerHTML = `
         <td>${snap ? `<img class="thumb" src="${URL.createObjectURL(snap)}">` : '—'}</td>
         <td>${new Date(e.timestamp).toLocaleString()}</td>
         <td>${escape(e.scenario)}</td>
-        <td>${e.mode}</td>
-        <td>${e.decision}</td>
+        <td>${MODE_LABELS[e.mode] || e.mode}</td>
+        <td>${DECISION_LABELS[e.decision] || e.decision}</td>
         <td>${escape((e.personId || '').slice(0, 12))}</td>
-        <td>${e.matchSimilarity != null ? e.matchSimilarity.toFixed(3) : '—'} <small>(${e.matchScope})</small></td>
-        <td>${e.needsReview ? '待審' : (e.meta?.reviewOutcome || '已處理')}</td>
+        <td>${e.matchSimilarity != null ? e.matchSimilarity.toFixed(3) : '—'} <small>(${SCOPE_LABELS[e.matchScope] || e.matchScope})</small></td>
+        <td>${outcomeLabel}</td>
         <td>${e.needsReview ? `
           <button class="btn btn-assign" data-id="${e.id}">指派</button>
-          <button class="btn btn-create" data-id="${e.id}">建新人</button>
+          <button class="btn btn-create" data-id="${e.id}">建檔</button>
           <button class="btn btn-ignore" data-id="${e.id}">忽略</button>
         ` : ''}</td>
       `;
@@ -64,11 +87,11 @@ export async function mountEventsTab(root, db) {
 
   async function assign(e) {
     const all = await store.listPeople(db);
-    const picks = all.slice(0, 30).map(p => `${p.id.slice(0, 8)}=${p.displayName || '?'}`).join('\n');
-    const choice = prompt(`輸入 person id 前綴指派此 event：\n${picks}`);
+    const picks = all.slice(0, 30).map(p => `${p.id.slice(0, 8)} = ${p.displayName || '（未命名）'}`).join('\n');
+    const choice = prompt(`輸入人員編號前綴將此紀錄指派給該人員：\n${picks}`);
     if (!choice) return;
     const target = all.find(p => p.id.startsWith(choice));
-    if (!target) { alert('找不到'); return; }
+    if (!target) { alert('找不到該人員'); return; }
     await store.updateEvent(db, e.id, {
       personId: target.id,
       needsReview: false,
@@ -79,7 +102,7 @@ export async function mountEventsTab(root, db) {
 
   async function createNew(e) {
     if (!confirm('請確認當事人已知悉並同意建檔。')) return;
-    const name = prompt('輸入 displayName（可留空）');
+    const name = prompt('請輸入姓名（可留空）');
     const p = await store.createPerson(db, {
       vectors: [], // MVP 不補 vectors
       modelVersion: e.modelVersion,
