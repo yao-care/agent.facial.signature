@@ -327,6 +327,55 @@ table.admin-table {
 .sim-score { font-size: var(--text-2xl); font-weight: 700; color: var(--color-pass); }
 .sim-judge { font-size: var(--text-base); color: var(--text-secondary); margin-top: 6px; }
 
+/* 警示名單卡片 — 按 tone 上色區分類型 */
+.watchlist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 20px;
+}
+.watchlist-card {
+  background: var(--bg-base);
+  padding: 20px 24px;
+  border-radius: 12px;
+  border-left: 6px solid var(--tone-color, var(--text-muted));
+  box-shadow: 0 2px 8px oklch(0.20 0.01 250 / 0.06);
+}
+.watchlist-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  row-gap: 2px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.watchlist-header .watchlist-badge { grid-column: 1; grid-row: 1 / 3; }
+.watchlist-header h3 { grid-column: 2; grid-row: 1; margin: 0; }
+.watchlist-header small { grid-column: 2; grid-row: 2; font-size: var(--text-xs); }
+.watchlist-header .watchlist-del { grid-column: 3; grid-row: 1 / 3; align-self: center; }
+
+.watchlist-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--tone-color, var(--text-primary));
+  background: var(--tone-bg, var(--bg-overlay));
+  white-space: nowrap;
+}
+.watchlist-count { font-size: var(--text-base); margin: 8px 0 12px; color: var(--text-secondary); }
+.watchlist-count strong { color: var(--tone-color); font-size: var(--text-lg); }
+
+/* tone 對應 design-tokens 色 */
+.tone-critical { --tone-color: var(--color-critical); --tone-bg: oklch(0.92 0.06 25); }
+.tone-warn     { --tone-color: var(--color-warn);     --tone-bg: var(--badge-bg-warn); }
+.tone-info     { --tone-color: var(--color-info);     --tone-bg: var(--badge-bg-info); }
+.tone-pass     { --tone-color: var(--color-pass);     --tone-bg: var(--badge-bg-pass); }
+.tone-purple   { --tone-color: oklch(0.50 0.17 300);  --tone-bg: oklch(0.92 0.05 300); }
+.tone-pink     { --tone-color: oklch(0.52 0.17 340);  --tone-bg: oklch(0.92 0.05 340); }
+.tone-neutral  { --tone-color: var(--text-secondary); --tone-bg: var(--bg-overlay); }
+
 /* 警示名單：成員列表與加入列 */
 .member-list { list-style: none; padding: 0; margin: 12px 0; }
 .member-list li {

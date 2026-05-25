@@ -1,17 +1,19 @@
 import * as store from '../face-store.js';
 import { showToast } from '../face-ui.js';
 
-// 常用名單預設 — 編號（內部用）與顯示名稱
+// 常用名單預設 — 編號（內部用）與顯示名稱、視覺主題色
+// color tone 對應 design-tokens 中的語意色（badge-bg-* + color-*）
 const WATCHLIST_PRESETS = [
-  { id: 'highrisk',   name: '高風險走失' },
-  { id: 'demented',   name: '失智長者' },
-  { id: 'banned',     name: '黑名單' },
-  { id: 'vip',        name: '重要訪客' },
-  { id: 'staff',      name: '員工' },
-  { id: 'volunteer',  name: '志工' },
-  { id: 'family',     name: '家屬' },
-  { id: 'custom',     name: '自訂…' },
+  { id: 'highrisk',   name: '高風險走失', tone: 'critical' },
+  { id: 'demented',   name: '失智長者',   tone: 'warn' },
+  { id: 'banned',     name: '黑名單',     tone: 'critical' },
+  { id: 'vip',        name: '重要訪客',   tone: 'purple' },
+  { id: 'staff',      name: '員工',       tone: 'info' },
+  { id: 'volunteer',  name: '志工',       tone: 'pass' },
+  { id: 'family',     name: '家屬',       tone: 'pink' },
+  { id: 'custom',     name: '自訂…',      tone: 'neutral' },
 ];
+const TONE_LOOKUP = Object.fromEntries(WATCHLIST_PRESETS.map(p => [p.id, p.tone]));
 
 export async function mountWatchlistsTab(root, db) {
   root.innerHTML = `
@@ -86,10 +88,12 @@ export async function mountWatchlistsTab(root, db) {
     const peopleById = new Map(allPeople.map(p => [p.id, p]));
     const container = root.querySelector('#lists');
     container.innerHTML = '';
+    container.classList.add('watchlist-grid');
     for (const wl of lists) {
       const card = document.createElement('div');
-      card.className = 'modal';
-      card.style.margin = '12px 0';
+      const tone = TONE_LOOKUP[wl.id] || 'neutral';
+      const presetName = WATCHLIST_PRESETS.find(p => p.id === wl.id)?.name;
+      card.className = `watchlist-card tone-${tone}`;
       // 候選名單：所有人員減去已在名單上的
       const candidates = allPeople.filter(p => !wl.personIds.includes(p.id));
       const candidateOptions = candidates.length === 0
@@ -99,9 +103,13 @@ export async function mountWatchlistsTab(root, db) {
           ).join('');
 
       card.innerHTML = `
-        <h3>${escape(wl.name)} <small style="color:var(--text-muted);">（編號 ${escape(wl.id)}）</small>
-          <button class="btn btn-danger" data-action="del">刪除名單</button></h3>
-        <p>目前共 ${wl.personIds.length} 人</p>
+        <div class="watchlist-header">
+          <span class="watchlist-badge">${escape(presetName || '自訂')}</span>
+          <h3>${escape(wl.name)}</h3>
+          <small style="color:var(--text-muted);">編號 ${escape(wl.id)}</small>
+          <button class="btn btn-danger btn-sm watchlist-del" data-action="del">刪除</button>
+        </div>
+        <p class="watchlist-count">目前共 <strong>${wl.personIds.length}</strong> 人</p>
         <ul class="member-list">${wl.personIds.map(pid => `
           <li>${escape(peopleById.get(pid)?.displayName || '（未命名 ' + pid.slice(0, 6) + '）')}
             <button class="btn btn-sm" data-remove="${pid}">移出</button></li>
