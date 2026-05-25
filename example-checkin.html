@@ -6,16 +6,25 @@
   <link rel="manifest" href="./manifest.json">
   <title>簽到</title>
   <style>
-    body { font-family: system-ui, sans-serif; margin: 0; padding: 0; }
-    #app { display: flex; flex-direction: column; height: 100vh; }
-    video { max-width: 100%; max-height: 80vh; background: #000; }
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
+    #app { flex: 1; display: flex; flex-direction: column; }
+    video { max-width: 100%; max-height: 70vh; background: #000; }
     .error, .readonly { padding: 40px; text-align: center; font-size: 18px; color: #dc2626; }
+    footer {
+      padding: 12px 20px;
+      font-size: var(--text-sm, 20px);
+      color: var(--text-secondary, #5e6070);
+      border-top: 1px solid var(--border-subtle, #d5d6da);
+      background: var(--bg-surface, #ecedf0);
+      line-height: 1.7;
+    }
+    footer strong { color: var(--text-primary, #1e2030); display: block; margin-bottom: 2px; }
   </style>
 </head>
 <body>
   <div id="app"></div>
-  <footer style="padding:16px 24px;font-size:13px;color:#555;border-top:1px solid #e5e7eb;line-height:1.8;">
-    <strong>簽到模式流程</strong><br>
+  <footer>
+    <strong>簽到模式流程</strong>
     比對對象：DB 中所有已建檔人員<br>
     看到新人：自動建檔，TTS 播報「歡迎」<br>
     看到已建檔者：TTS 播報姓名，寫入簽到紀錄<br>
