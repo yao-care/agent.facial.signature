@@ -139,6 +139,7 @@
   gap: 16px;
   z-index: 100;
   animation: result-pop 0.3s ease-out;
+  border-left: 8px solid var(--color-pass);
 }
 .result-icon {
   font-size: var(--text-2xl);
@@ -150,9 +151,18 @@
   font-weight: 700;
   color: var(--text-primary);
 }
+.result-badge {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  background: var(--badge-bg-info);
+  color: var(--color-info);
+}
 .result-retry {
   background: var(--badge-bg-warn);
   color: var(--color-warn);
+  border-left-color: var(--color-warn);
 }
 .alert-card h2 {
   color: var(--color-critical);
@@ -160,6 +170,43 @@
 }
 @keyframes result-pop {
   from { transform: translate(-50%, -100%); opacity: 0; }
+}
+
+/* result-card 的 tone — 命中警示名單時整張卡上色 */
+.result-card.tone-critical {
+  background: oklch(0.92 0.06 25);
+  border-left-color: var(--color-critical);
+  animation: result-pop 0.3s ease-out, urgent-pulse 1s ease-in-out 0.3s 3;
+}
+.result-card.tone-critical .result-icon { color: var(--color-critical); }
+.result-card.tone-critical .result-badge { background: var(--color-critical); color: white; }
+.result-card.tone-warn {
+  background: var(--badge-bg-warn);
+  border-left-color: var(--color-warn);
+}
+.result-card.tone-warn .result-icon { color: var(--color-warn); }
+.result-card.tone-warn .result-badge { background: var(--color-warn); color: white; }
+.result-card.tone-info { border-left-color: var(--color-info); }
+.result-card.tone-info .result-icon { color: var(--color-info); }
+.result-card.tone-info .result-badge { background: var(--color-info); color: white; }
+.result-card.tone-pass .result-badge { background: var(--color-pass); color: white; }
+.result-card.tone-purple {
+  border-left-color: oklch(0.50 0.17 300);
+}
+.result-card.tone-purple .result-icon { color: oklch(0.50 0.17 300); }
+.result-card.tone-purple .result-badge {
+  background: oklch(0.50 0.17 300); color: white;
+}
+.result-card.tone-pink {
+  border-left-color: oklch(0.52 0.17 340);
+}
+.result-card.tone-pink .result-badge {
+  background: oklch(0.52 0.17 340); color: white;
+}
+
+@keyframes urgent-pulse {
+  0%, 100% { box-shadow: 0 8px 24px oklch(0.20 0.01 250 / 0.25); }
+  50% { box-shadow: 0 0 0 8px oklch(0.55 0.22 25 / 0.4), 0 8px 24px oklch(0.20 0.01 250 / 0.25); }
 }
 
 /* Generic error/readonly text */

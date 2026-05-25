@@ -134,7 +134,8 @@ async function runCheckinInner(config, rootEl) {
       if (Date.now() - last < config.dedupWindowMs) {
         // 在 dedup window 內 → 僅顯示結果，跳過 event 寫入與向量回寫
         person = await store.getPerson(db, personId);
-        ui.showCheckinResult(rootEl, { decision, person, ttsConfig: config.tts });
+        const watchlistInfo = await findHighestPriorityWatchlist(db, personId);
+        ui.showCheckinResult(rootEl, { decision, person, ttsConfig: config.tts, watchlistInfo });
         return;
       }
       lastEventTs.set(personId, Date.now());
@@ -188,8 +189,9 @@ async function runCheckinInner(config, rootEl) {
       meta: eventMeta,
     });
 
-    // === UI 反饋 ===
-    ui.showCheckinResult(rootEl, { decision, person, ttsConfig: config.tts });
+    // === UI 反饋 — 含警示名單身份標籤（影響卡片顏色） ===
+    const watchlistInfo = await findHighestPriorityWatchlist(db, personId);
+    ui.showCheckinResult(rootEl, { decision, person, ttsConfig: config.tts, watchlistInfo });
   });
 
   engine.on('error', err => {
@@ -252,6 +254,33 @@ async function pickExtraFields(db, fields, decision, _personId, _matchResult) {
     }
   }
   return result;
+}
+
+// 名單類型 → tone 與優先級（critical 最高，多名單命中時取最高者）
+const WATCHLIST_META = {
+  highrisk:  { tone: 'critical', name: '高風險走失', priority: 100 },
+  banned:    { tone: 'critical', name: '黑名單',     priority: 95  },
+  demented:  { tone: 'warn',     name: '失智長者',   priority: 80  },
+  vip:       { tone: 'purple',   name: '重要訪客',   priority: 60  },
+  staff:     { tone: 'info',     name: '員工',       priority: 40  },
+  volunteer: { tone: 'pass',     name: '志工',       priority: 30  },
+  family:    { tone: 'pink',     name: '家屬',       priority: 20  },
+};
+
+async function findHighestPriorityWatchlist(db, personId) {
+  if (!personId) return null;
+  const wls = await store.findWatchlistsContaining(db, personId);
+  if (!wls.length) return null;
+  let best = null;
+  let bestPriority = -1;
+  for (const wl of wls) {
+    const meta = WATCHLIST_META[wl.id] || { tone: 'neutral', name: wl.name, priority: 0 };
+    if (meta.priority > bestPriority) {
+      best = { id: wl.id, tone: meta.tone, label: meta.name };
+      bestPriority = meta.priority;
+    }
+  }
+  return best;
 }
 
 function extractPersonMeta(fields, values) {

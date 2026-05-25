@@ -188,24 +188,28 @@ function fillTemplate(tpl, { name }) {
     .replace(/\{greeting\}/g, timeGreeting());
 }
 
-export function showCheckinResult(rootEl, { decision, person, ttsConfig }) {
+export function showCheckinResult(rootEl, { decision, person, ttsConfig, watchlistInfo }) {
   const card = document.createElement('div');
-  card.className = `result-card result-${decision}`;
+  const toneClass = watchlistInfo ? `tone-${watchlistInfo.tone}` : '';
+  card.className = `result-card result-${decision} ${toneClass}`.trim();
+  const badge = watchlistInfo
+    ? `<div class="result-badge">${escapeHtml(watchlistInfo.label)}</div>`
+    : '';
   if (decision === 'fuzzy') {
-    card.innerHTML = `<div class="result-icon">✓</div><div class="result-text">已完成</div>`;
+    card.innerHTML = `<div class="result-icon">✓</div><div class="result-text">已完成</div>${badge}`;
   } else if (person?.displayName) {
-    // 視覺：人臉框 + 「張三 早安」
     const visualText = fillTemplate(ttsConfig?.templateNamed || '{name} {greeting}', { name: person.displayName });
-    card.innerHTML = `<div class="result-icon">✓</div><div class="result-text">${escapeHtml(visualText)}</div>`;
+    card.innerHTML = `<div class="result-icon">✓</div><div class="result-text">${escapeHtml(visualText)}</div>${badge}`;
     if (ttsConfig?.enabled && audioMode === 'tts') {
       speak(visualText);
     }
   } else {
-    // 沒有姓名：純視覺 + 時段問候，不播 TTS（避免唸不出姓名很怪）
-    card.innerHTML = `<div class="result-icon">✓</div><div class="result-text">${timeGreeting()}，歡迎光臨</div>`;
+    card.innerHTML = `<div class="result-icon">✓</div><div class="result-text">${timeGreeting()}，歡迎光臨</div>${badge}`;
   }
   rootEl.appendChild(card);
-  setTimeout(() => card.remove(), 2500);
+  // critical / warn 名單延長停留時間（工作人員需要看清楚）
+  const dwell = watchlistInfo && (watchlistInfo.tone === 'critical' || watchlistInfo.tone === 'warn') ? 5000 : 2500;
+  setTimeout(() => card.remove(), dwell);
 }
 
 export function showAlertPopup(rootEl, { person, message, sound }) {
