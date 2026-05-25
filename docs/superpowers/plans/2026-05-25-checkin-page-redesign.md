@@ -1,3 +1,32 @@
+# example-checkin.html 畫面重新設計 Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** 將 example-checkin.html 改為 CSS grid 50/50 雙區塊版型，攝影機區與流程說明區各佔半個畫面，字級與顏色完全遵循 design token。
+
+**Architecture:** `body` 改 CSS grid（portrait = rows 1fr 1fr，landscape = columns 1fr 1fr）。`#app` 為攝影機格（JS template 繼續控制其 innerHTML）；`.flow-section` 為靜態 HTML 格，含標題 + 4 個彩色大字區塊。`tokens.css` 直接 link 在 `<head>` 讓變數立即可用。JS template、tokens.css、face-ui.css 完全不動。
+
+**Tech Stack:** HTML、CSS Grid、CSS custom properties（tokens.css）、Playwright（驗證）
+
+---
+
+## 修改檔案清單
+
+| 檔案 | 動作 |
+|---|---|
+| `example-checkin.html` | 全部改寫 |
+| `service-worker.js` | VERSION v18 → v19 |
+
+---
+
+### Task 1：改寫 example-checkin.html
+
+**Files:**
+- Modify: `example-checkin.html`（完整覆寫）
+
+- [ ] **Step 1：用以下內容完整覆寫 `example-checkin.html`**
+
+```html
 <!doctype html>
 <html lang="zh-TW">
 <head>
@@ -118,6 +147,7 @@
       line-height: 1.3;
     }
 
+    /* 各區塊顏色 */
     .flow-card-scope  { background: var(--bg-overlay);      color: var(--text-secondary); }
     .flow-card-new    { background: var(--badge-bg-info);   color: var(--color-info); }
     .flow-card-match  { background: var(--badge-bg-pass);   color: var(--color-pass); }
@@ -156,3 +186,75 @@
   </script>
 </body>
 </html>
+```
+
+---
+
+### Task 2：Bump Service Worker 版本
+
+**Files:**
+- Modify: `service-worker.js`（第 4 行）
+
+- [ ] **Step 1：將 VERSION v18 改為 v19**
+
+```js
+const VERSION = 'v19';
+```
+
+---
+
+### Task 3：Commit + Push + 等 Actions 完成
+
+**Files:** 以上兩個檔案
+
+- [ ] **Step 1：Commit**
+
+```bash
+git add example-checkin.html service-worker.js
+git commit -m "feat: checkin page redesign — CSS grid 50/50 雙區塊版型"
+```
+
+- [ ] **Step 2：Push**
+
+```bash
+git push
+```
+
+- [ ] **Step 3：等 GitHub Actions 部署完成**
+
+```bash
+gh run list --repo yao-care/agent.facial.signature --limit 1
+```
+
+預期輸出：`completed  success  ...  Deploy to GitHub Pages`
+
+---
+
+### Task 4：Playwright 視覺驗證
+
+**Files:** 無（純驗證）
+
+- [ ] **Step 1：截圖 portrait（1080×1920 模擬直立手機）**
+
+```js
+// 用 Playwright navigate + resize + screenshot
+// URL: https://sign.yao.care/example-checkin.html
+// viewport: width=390, height=844
+// fullPage: true
+```
+
+確認：
+- 上半是攝影機（黑底或畫面），左上角有半透明標題 overlay
+- 下半是 2×2 彩色格，字夠大（目視約 32px 的標籤文字）
+- 無捲動條，無內容溢出
+
+- [ ] **Step 2：截圖 landscape（1280×720 模擬橫向桌電）**
+
+```js
+// viewport: width=1280, height=720
+```
+
+確認：
+- 左半攝影機，右半 4 列彩色格縱向排列
+- 標題「示範簽到場景」出現在右半頂部（灰底大字）
+- 無任何破版
