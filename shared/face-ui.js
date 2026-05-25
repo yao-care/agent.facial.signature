@@ -98,13 +98,13 @@ export function drawFaceBoxes(canvas, faceData) {
     const [x, y, w, h] = f.box;
     const cx = x + w / 2;
     const cy = y + h / 2;
-    // 半徑：取臉框較長那邊的一半，再放大 10% 留 padding
-    const radius = (Math.max(w, h) / 2) * 1.12;
+    // 半徑：取臉框較短那邊的一半（剛好內切於臉，不會撐到背景）
+    const radius = Math.min(w, h) / 2;
     const pct = f.done ? 1 : (f.targetFrames > 0 ? Math.min(1, f.framesCollected / f.targetFrames) : 0);
 
     // 1. 底層淡灰整圈（讓使用者看到圓在哪裡）
-    ctx.strokeStyle = 'rgba(138, 140, 152, 0.55)';
-    ctx.lineWidth = 4;
+    ctx.strokeStyle = 'rgba(138, 140, 152, 0.6)';
+    ctx.lineWidth = 5;
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
     ctx.stroke();
@@ -114,18 +114,19 @@ export function drawFaceBoxes(canvas, faceData) {
       const startAngle = -Math.PI / 2;
       const endAngle = startAngle + 2 * Math.PI * pct;
       ctx.strokeStyle = '#1e8050';
-      ctx.lineWidth = 6;
+      ctx.lineWidth = 8;
       ctx.lineCap = 'round';
       ctx.beginPath();
       ctx.arc(cx, cy, radius, startAngle, endAngle);
       ctx.stroke();
     }
 
-    // 3. 完成標記（圓內偏右上）
+    // 3. 完成標記（圓內偏右上、放大）
     if (f.done) {
       ctx.fillStyle = '#1e8050';
-      ctx.font = 'bold 28px sans-serif';
-      ctx.fillText('✓', cx + radius * 0.55, cy - radius * 0.55);
+      ctx.font = 'bold 48px sans-serif';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('✓', cx + radius * 0.45, cy - radius * 0.45);
     }
   }
 }
