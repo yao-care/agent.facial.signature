@@ -2,7 +2,7 @@
   "scenarioId": "example-alert",
   "scenarioName": "示範警示場景",
   "uiTheme": { "primary": "#dc2626", "background": "#fef2f2" },
-  "watchlistId": "demo-watchlist",
+  "watchlistId": "highrisk",
   "concurrency": "multi-face",
   "dedupWindowMs": 60000,
   "alertSound": {

@@ -99,7 +99,7 @@ export async function mountPeopleTab(root, db, { onViewEvents } = {}) {
         <td><input class="name-input" value="${escape(p.displayName || '')}" placeholder="（未命名）"></td>
         <td>${dailyCell}</td>
         <td>${last ? formatRelative(last.timestamp) : '—'}</td>
-        <td>${metaPreview}</td>
+        <td><button class="btn btn-sm btn-edit-meta" data-id="${p.id}">${metaPreview}</button></td>
         <td class="col-actions">
           <div class="action-buttons">
             <button class="btn btn-sm btn-save" data-id="${p.id}">儲存</button>
@@ -111,9 +111,10 @@ export async function mountPeopleTab(root, db, { onViewEvents } = {}) {
       `;
       tbody.appendChild(tr);
 
-      tr.querySelector('.btn-count').addEventListener('click', () => {
+      tr.querySelector('.btn-count')?.addEventListener('click', () => {
         if (onViewEvents) onViewEvents(p.id);
       });
+      tr.querySelector('.btn-edit-meta').addEventListener('click', () => openMetaEditor(p));
       tr.querySelector('.btn-save').addEventListener('click', async () => {
         const name = tr.querySelector('.name-input').value.trim() || null;
         await store.updatePerson(db, p.id, { displayName: name });
@@ -129,6 +130,79 @@ export async function mountPeopleTab(root, db, { onViewEvents } = {}) {
       tr.querySelector('.btn-merge').addEventListener('click', () => openMergeDialog(p.id));
       tr.querySelector('.btn-split').addEventListener('click', () => openSplitDialog(p.id));
     }
+  }
+
+  function openMetaEditor(p) {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    const entries = Object.entries(p.meta || {});
+    // 常見欄位放在 datalist 給快速選擇
+    const COMMON_KEYS = ['電話', '關係', '緊急聯絡人', '地址', '生日', '備註', '性別', '年齡'];
+    overlay.innerHTML = `
+      <div class="modal meta-modal">
+        <h2>編輯「${escape(p.displayName || '未命名')}」的備註</h2>
+        <p class="hint">這裡的欄位可以自由新增。常用：電話、關係、緊急聯絡人、地址、備註…</p>
+        <datalist id="meta-keys"><!--
+          --><option value="電話"><option value="關係"><option value="緊急聯絡人">
+          <option value="地址"><option value="生日"><option value="備註">
+        </datalist>
+        <div class="meta-rows" id="meta-rows">
+          ${entries.length === 0 ? renderMetaRow('', '') : entries.map(([k, v]) => renderMetaRow(k, v)).join('')}
+        </div>
+        <button class="btn meta-add" id="meta-add">+ 新增一欄</button>
+        <div class="consent-actions">
+          <button class="btn meta-cancel">取消</button>
+          <button class="btn btn-primary meta-save">儲存</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    const rowsEl = overlay.querySelector('#meta-rows');
+    const wireRemove = (btn) => btn.addEventListener('click', () => btn.closest('.meta-row').remove());
+    overlay.querySelectorAll('.meta-remove').forEach(wireRemove);
+    overlay.querySelector('#meta-add').addEventListener('click', () => {
+      const div = document.createElement('div');
+      div.innerHTML = renderMetaRow('', '');
+      const row = div.firstElementChild;
+      rowsEl.appendChild(row);
+      wireRemove(row.querySelector('.meta-remove'));
+      row.querySelector('.meta-key').focus();
+    });
+    overlay.querySelector('.meta-cancel').addEventListener('click', () => overlay.remove());
+    overlay.querySelector('.meta-save').addEventListener('click', async () => {
+      const next = {};
+      rowsEl.querySelectorAll('.meta-row').forEach(row => {
+        const k = row.querySelector('.meta-key').value.trim();
+        const v = row.querySelector('.meta-val').value.trim();
+        if (k) next[k] = v;
+      });
+      // updatePerson 會把 patch.meta 與既有 meta 合併；我們要 *取代*，
+      // 所以先呼一次 update 把 meta 設成 next（但會 merge）— 改為先抓
+      // 既存 meta，找出被刪掉的 keys，逐一刪掉，再 patch 進新值
+      const current = await store.getPerson(db, p.id);
+      const removed = Object.keys(current.meta || {}).filter(k => !(k in next));
+      // 採直接覆寫的方式：用低層 put 重寫整個 person，繞過 updatePerson 的 merge
+      const tx = db.transaction('people', 'readwrite');
+      const fresh = await tx.store.get(p.id);
+      fresh.meta = next;
+      fresh.updatedAt = Date.now();
+      await tx.store.put(fresh);
+      await tx.done;
+      overlay.remove();
+      showToast(null, `已更新 ${p.displayName || '此人員'} 的備註`, 'success');
+      render();
+    });
+  }
+
+  function renderMetaRow(k, v) {
+    const val = Array.isArray(v) ? v.join('、') : String(v ?? '');
+    return `
+      <div class="meta-row">
+        <input class="meta-key" list="meta-keys" placeholder="欄位名（如：電話）" value="${escape(k)}">
+        <input class="meta-val" placeholder="內容" value="${escape(val)}">
+        <button type="button" class="meta-remove" aria-label="移除">×</button>
+      </div>
+    `;
   }
 
   async function openMergeDialog(fromId) {

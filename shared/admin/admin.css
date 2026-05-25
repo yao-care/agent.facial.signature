@@ -96,6 +96,50 @@ table.admin-table {
 .btn-count div { font-size: var(--text-sm); }
 .btn-count strong { color: var(--color-pass); font-size: var(--text-base); }
 
+/* 備註欄按鈕：整格可點，hover 反白 */
+.btn-edit-meta {
+  text-align: left;
+  padding: 8px 12px;
+  width: 100%;
+  background: transparent;
+  border: 1px dashed transparent;
+  font-size: var(--text-sm);
+}
+.btn-edit-meta:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-subtle);
+}
+
+/* 備註編輯 modal */
+.meta-modal { min-width: 520px; }
+.meta-rows { display: flex; flex-direction: column; gap: 8px; margin: 16px 0; }
+.meta-row {
+  display: grid;
+  grid-template-columns: 160px 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+.meta-row input {
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: var(--bg-base);
+  font-size: var(--text-base);
+}
+.meta-remove {
+  padding: 6px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-critical);
+  font-size: var(--text-base);
+  cursor: pointer;
+}
+.meta-add {
+  font-size: var(--text-sm);
+  border-style: dashed;
+}
+
 /* 警示名單：建立新名單表單 — 用 grid 排，每欄都有足夠寬度 */
 .new-list-form {
   display: grid;
