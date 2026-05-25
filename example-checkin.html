@@ -13,24 +13,18 @@
       margin: 0;
       height: 100vh;
       height: 100dvh;
-      display: grid;
+      display: flex;
+      flex-direction: column;
       overflow: hidden;
     }
 
-    @media (orientation: portrait) {
-      body { grid-template-rows: 1fr 1fr; }
-    }
-    @media (orientation: landscape) {
-      body { grid-template-columns: 1fr 1fr; }
-    }
-
-    /* 攝影機格 */
+    /* 攝影機區：全寬，佔剩餘高度 */
     #app {
+      flex: 1;
       position: relative;
       background: #000;
       overflow: hidden;
       min-height: 0;
-      min-width: 0;
     }
     #app video {
       width: 100%;
@@ -65,36 +59,14 @@
       font-size: var(--text-lg);
     }
 
-    /* 流程說明格 */
+    /* 流程說明：全寬橫排，固定高度 */
     .flow-section {
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      min-height: 0;
-      min-width: 0;
-    }
-
-    .flow-title {
       flex-shrink: 0;
-      padding: 16px 20px 8px;
-      font-size: var(--text-3xl);
-      font-weight: 700;
-      color: var(--text-primary);
-      background: var(--bg-overlay);
-      line-height: 1.2;
-    }
-
-    .flow-grid {
-      flex: 1;
-      min-height: 0;
       display: flex;
-      flex-direction: column;
-    }
-    @media (orientation: portrait) {
-      .flow-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-      }
+      flex-direction: row;
+      height: 28vh;
+      min-height: 160px;
+      max-height: 260px;
     }
 
     .flow-card {
@@ -103,48 +75,45 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
-      min-height: 0;
+      min-width: 0;
     }
     .flow-card-label {
       margin: 0;
-      font-size: var(--text-xl);
+      font-size: var(--text-lg);
       font-weight: 700;
       line-height: 1.2;
     }
     .flow-card-desc {
       margin-top: 6px;
-      font-size: var(--text-lg);
+      font-size: var(--text-base);
       opacity: 0.85;
-      line-height: 1.3;
+      line-height: 1.4;
     }
 
-    .flow-card-scope  { background: var(--bg-overlay);      color: var(--text-secondary); }
-    .flow-card-new    { background: var(--badge-bg-info);   color: var(--color-info); }
-    .flow-card-match  { background: var(--badge-bg-pass);   color: var(--color-pass); }
-    .flow-card-fuzzy  { background: var(--badge-bg-warn);   color: var(--color-warn); }
+    .flow-card-scope { background: var(--bg-overlay);    color: var(--text-secondary); }
+    .flow-card-new   { background: var(--badge-bg-info); color: var(--color-info); }
+    .flow-card-match { background: var(--badge-bg-pass); color: var(--color-pass); }
+    .flow-card-fuzzy { background: var(--badge-bg-warn); color: var(--color-warn); }
   </style>
 </head>
 <body>
   <div id="app"></div>
   <section class="flow-section">
-    <div class="flow-title">示範簽到場景</div>
-    <div class="flow-grid">
-      <div class="flow-card flow-card-scope">
-        <div class="flow-card-label">比對對象</div>
-        <div class="flow-card-desc">DB 全體已建檔人員</div>
-      </div>
-      <div class="flow-card flow-card-new">
-        <div class="flow-card-label">新人入鏡</div>
-        <div class="flow-card-desc">自動建檔・TTS「歡迎」</div>
-      </div>
-      <div class="flow-card flow-card-match">
-        <div class="flow-card-label">已建檔者</div>
-        <div class="flow-card-desc">TTS 播報姓名・寫簽到紀錄</div>
-      </div>
-      <div class="flow-card flow-card-fuzzy">
-        <div class="flow-card-label">模糊臉</div>
-        <div class="flow-card-desc">寫 event 待管理員 review</div>
-      </div>
+    <div class="flow-card flow-card-scope">
+      <div class="flow-card-label">比對對象</div>
+      <div class="flow-card-desc">DB 全體已建檔人員</div>
+    </div>
+    <div class="flow-card flow-card-new">
+      <div class="flow-card-label">新人入鏡</div>
+      <div class="flow-card-desc">自動建檔・TTS「歡迎」</div>
+    </div>
+    <div class="flow-card flow-card-match">
+      <div class="flow-card-label">已建檔者</div>
+      <div class="flow-card-desc">TTS 播報姓名・寫簽到紀錄</div>
+    </div>
+    <div class="flow-card flow-card-fuzzy">
+      <div class="flow-card-label">模糊臉</div>
+      <div class="flow-card-desc">寫 event 待管理員 review</div>
     </div>
   </section>
   <script type="module">
