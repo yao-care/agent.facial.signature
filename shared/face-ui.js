@@ -85,8 +85,8 @@ export function createOverlayCanvas(videoEl, parent) {
 }
 
 /**
- * 在 canvas 上畫人臉框，框本身就是進度條 —— 從左上順時針繞一圈，
- * 滿一圈即「採樣完成」。
+ * 在 canvas 上畫人臉「圓框」，圓周本身就是進度條：從正上方 12 點鐘
+ * 方向順時針繞一圈，圓周閉合 = 採樣完成。
  * faceData: Array<{ faceId, box, framesCollected, targetFrames, done }>
  */
 export function drawFaceBoxes(canvas, faceData) {
@@ -96,51 +96,36 @@ export function drawFaceBoxes(canvas, faceData) {
   for (const f of faceData || []) {
     if (!f.box) continue;
     const [x, y, w, h] = f.box;
+    const cx = x + w / 2;
+    const cy = y + h / 2;
+    // 半徑：取臉框較長那邊的一半，再放大 10% 留 padding
+    const radius = (Math.max(w, h) / 2) * 1.12;
     const pct = f.done ? 1 : (f.targetFrames > 0 ? Math.min(1, f.framesCollected / f.targetFrames) : 0);
 
-    // 1. 底色框（淡灰，整圈）— 讓使用者看到框在哪裡
+    // 1. 底層淡灰整圈（讓使用者看到圓在哪裡）
     ctx.strokeStyle = 'rgba(138, 140, 152, 0.55)';
     ctx.lineWidth = 4;
-    ctx.strokeRect(x, y, w, h);
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+    ctx.stroke();
 
-    // 2. 進度框 — 從左上順時針繞，畫到 pct × 周長 為止
+    // 2. 綠色進度弧 — 從 12 點鐘方向順時針掃到 pct
     if (pct > 0) {
-      const perimeter = 2 * (w + h);
-      let remaining = perimeter * pct;
-
+      const startAngle = -Math.PI / 2;
+      const endAngle = startAngle + 2 * Math.PI * pct;
       ctx.strokeStyle = '#1e8050';
       ctx.lineWidth = 6;
       ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.moveTo(x, y);
-
-      // top edge → right edge → bottom edge → left edge（順時針）
-      const topLen = Math.min(w, remaining);
-      ctx.lineTo(x + topLen, y);
-      remaining -= topLen;
-
-      if (remaining > 0) {
-        const rightLen = Math.min(h, remaining);
-        ctx.lineTo(x + w, y + rightLen);
-        remaining -= rightLen;
-      }
-      if (remaining > 0) {
-        const bottomLen = Math.min(w, remaining);
-        ctx.lineTo(x + w - bottomLen, y + h);
-        remaining -= bottomLen;
-      }
-      if (remaining > 0) {
-        const leftLen = Math.min(h, remaining);
-        ctx.lineTo(x, y + h - leftLen);
-      }
+      ctx.arc(cx, cy, radius, startAngle, endAngle);
       ctx.stroke();
     }
 
-    // 3. 完成標記
+    // 3. 完成標記（圓內偏右上）
     if (f.done) {
       ctx.fillStyle = '#1e8050';
-      ctx.font = 'bold 24px sans-serif';
-      ctx.fillText('✓', x + w - 32, y + 28);
+      ctx.font = 'bold 28px sans-serif';
+      ctx.fillText('✓', cx + radius * 0.55, cy - radius * 0.55);
     }
   }
 }
@@ -158,18 +143,36 @@ export function drawRoi(canvas, roiBox) {
   ctx.fillText('請站這裡', roiBox.x + 10, roiBox.y + 30);
 }
 
+/** 依當前時段回傳合適的問候：早安 / 午安 / 晚安 */
+function timeGreeting() {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 11) return '早安';
+  if (h >= 11 && h < 18) return '午安';
+  return '晚安';
+}
+
+/** 把 TTS / 視覺模板中的 {name} / {greeting} 變數展開 */
+function fillTemplate(tpl, { name }) {
+  return String(tpl ?? '')
+    .replace(/\{name\}/g, name ?? '')
+    .replace(/\{greeting\}/g, timeGreeting());
+}
+
 export function showCheckinResult(rootEl, { decision, person, ttsConfig }) {
   const card = document.createElement('div');
   card.className = `result-card result-${decision}`;
   if (decision === 'fuzzy') {
     card.innerHTML = `<div class="result-icon">✓</div><div class="result-text">已完成</div>`;
   } else if (person?.displayName) {
-    card.innerHTML = `<div class="result-icon">✓</div><div class="result-text">${escapeHtml(person.displayName)}</div>`;
+    // 視覺：人臉框 + 「張三 早安」
+    const visualText = fillTemplate(ttsConfig?.templateNamed || '{name} {greeting}', { name: person.displayName });
+    card.innerHTML = `<div class="result-icon">✓</div><div class="result-text">${escapeHtml(visualText)}</div>`;
     if (ttsConfig?.enabled && audioMode === 'tts') {
-      speak(ttsConfig.templateNamed.replace('{name}', person.displayName));
+      speak(visualText);
     }
   } else {
-    card.innerHTML = `<div class="result-icon">✓</div><div class="result-text">歡迎光臨</div>`;
+    // 沒有姓名：純視覺 + 時段問候，不播 TTS（避免唸不出姓名很怪）
+    card.innerHTML = `<div class="result-icon">✓</div><div class="result-text">${timeGreeting()}，歡迎光臨</div>`;
   }
   rootEl.appendChild(card);
   setTimeout(() => card.remove(), 2500);

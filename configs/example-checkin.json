@@ -23,6 +23,6 @@
   ],
   "tts": {
     "enabled": true,
-    "templateNamed": "{name} 您好，歡迎光臨！"
+    "templateNamed": "{name} {greeting}"
   }
 }

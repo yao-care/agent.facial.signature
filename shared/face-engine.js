@@ -119,16 +119,15 @@ function createSession(faceId, tuning) {
   const start = Date.now();
   const vectors = [];
   const qualities = [];
+  const ages = [];
+  const genders = [];
   let lastSeenTs = Date.now();
   let done = false;
 
   async function feedFrame(face, metrics, video, human, emit) {
     if (done) return;
 
-    // interFrameConsistency：與上一個 vector 比
     const desc = face.embedding || face.descriptor;
-    // Human 偶爾回 null / undefined / 空陣列。空陣列在 `!desc` 下 truthy 通過，
-    // 但會產出 0-length Float32Array 後續 cosine 比對會 dim mismatch 炸掉。
     if (!desc || !desc.length) return;
     const vector = new Float32Array(desc);
 
@@ -141,6 +140,9 @@ function createSession(faceId, tuning) {
     if (q.passAll(tuning.qualityFactorThresholds)) {
       vectors.push(vector);
       qualities.push(q);
+      // Human library 在 description 模組同時輸出 age + gender
+      if (typeof face.age === 'number') ages.push(face.age);
+      if (face.gender) genders.push(face.gender);
     }
 
     const elapsed = Date.now() - start;
@@ -156,6 +158,8 @@ function createSession(faceId, tuning) {
         qualityScore: q,
         samplingQuality: averageDetectionConfidence(qualities),
         modelVersion: MODEL_VERSION,
+        age: aggregateAge(ages),
+        gender: aggregateGender(genders),
       });
     } else if (elapsed > tuning.samplingMaxDurationMs) {
       done = true;
@@ -180,6 +184,39 @@ function createSession(faceId, tuning) {
 function averageDetectionConfidence(qs) {
   if (qs.length === 0) return 0;
   return qs.reduce((s, q) => s + q.detectionConfidence, 0) / qs.length;
+}
+
+/** 採樣期間多個 age 取中位數（去除 outlier） */
+function aggregateAge(ages) {
+  if (!ages || ages.length === 0) return null;
+  const sorted = [...ages].sort((a, b) => a - b);
+  return Math.round(sorted[Math.floor(sorted.length / 2)]);
+}
+
+/** 把估計年齡轉成「年齡區間」字串，給 UI 顯示 */
+export function ageBand(age) {
+  if (age == null) return null;
+  if (age < 13) return '兒童';
+  if (age < 20) return '青少年';
+  if (age < 35) return '青年';
+  if (age < 55) return '中年';
+  if (age < 75) return '中老年';
+  return '長者';
+}
+
+/** 採樣期間多個 gender 取眾數 */
+function aggregateGender(genders) {
+  if (!genders || genders.length === 0) return null;
+  const tally = {};
+  for (const g of genders) tally[g] = (tally[g] || 0) + 1;
+  let best = null, bestN = 0;
+  for (const [g, n] of Object.entries(tally)) {
+    if (n > bestN) { best = g; bestN = n; }
+  }
+  // 翻成中文
+  if (best === 'male') return '男';
+  if (best === 'female') return '女';
+  return best;
 }
 
 async function captureSnapshot(face, video) {

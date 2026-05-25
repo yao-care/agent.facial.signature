@@ -147,10 +147,14 @@ async function runCheckinInner(config, rootEl) {
       });
     } else if (decision === 'new') {
       // 新人 → 直接寫入所有向量（empty-target fallback 同效果）
+      // 同時把 Human 偵測出的年齡 + 性別寫入 meta（建檔時的初次估計）
+      const demographicMeta = {};
+      if (result.age != null) demographicMeta['年齡'] = result.age;
+      if (result.gender) demographicMeta['性別'] = result.gender;
       person = await store.createPerson(db, {
         vectors: result.vectors,
         modelVersion: engine.modelVersion,
-        meta: extractPersonMeta(config.extraFields, extraValues),
+        meta: { ...demographicMeta, ...extractPersonMeta(config.extraFields, extraValues) },
       });
       personId = person.id;
       isNewPerson = true;
@@ -161,6 +165,9 @@ async function runCheckinInner(config, rootEl) {
 
     // === event meta 提取與寫入 ===
     const eventMeta = extractEventMeta(config.extraFields, extraValues);
+    // 每次紀錄都附上當下偵測到的年齡 / 性別（給分析用）
+    if (result.age != null) eventMeta['年齡'] = result.age;
+    if (result.gender) eventMeta['性別'] = result.gender;
     if (decision === 'fuzzy') {
       // fuzzy 在 meta 中記錄候選者（用於審核）
       eventMeta.candidates = matchResult.candidates;
