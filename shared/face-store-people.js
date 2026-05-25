@@ -2,11 +2,13 @@ import { ulid } from './util-ulid.js';
 
 export async function createPerson(db, { vectors = [], modelVersion, meta = {}, displayName = null }) {
   if (!modelVersion) throw new Error('modelVersion required');
+  // 過濾掉 0-length / null vectors（若 buffer 被 transfer 過會 detach 成 length 0）
+  const cleanVectors = (vectors || []).filter(v => v && v.length > 0);
   const now = Date.now();
   const person = {
     id: ulid(),
     displayName,
-    vectors,
+    vectors: cleanVectors,
     modelVersion,
     meta,
     createdAt: now,

@@ -1,4 +1,5 @@
 import * as store from '../face-store.js';
+import { showToast } from '../face-ui.js';
 
 export async function mountWatchlistsTab(root, db) {
   root.innerHTML = `
@@ -13,8 +14,11 @@ export async function mountWatchlistsTab(root, db) {
   root.querySelector('#new-btn').addEventListener('click', async () => {
     const id = root.querySelector('#new-id').value.trim();
     const name = root.querySelector('#new-name').value.trim();
-    if (!id) { alert('請輸入名單編號'); return; }
+    if (!id) { showToast(null, '請輸入名單編號', 'error'); return; }
     await store.createWatchlist(db, { id, name: name || id });
+    root.querySelector('#new-id').value = '';
+    root.querySelector('#new-name').value = '';
+    showToast(null, `已建立名單「${name || id}」`, 'success');
     render();
   });
 
@@ -48,8 +52,9 @@ export async function mountWatchlistsTab(root, db) {
       card.querySelector('[data-action=add]').addEventListener('click', async () => {
         const prefix = card.querySelector('.add-input').value.trim();
         const target = allPeople.find(p => p.id.startsWith(prefix));
-        if (!target) { alert('找不到該人員'); return; }
+        if (!target) { showToast(null, '找不到該人員', 'error'); return; }
         await store.addToWatchlist(db, wl.id, target.id);
+        showToast(null, `已加入「${target.displayName || target.id.slice(0, 8)}」`, 'success');
         render();
       });
       card.querySelectorAll('[data-remove]').forEach(btn => {

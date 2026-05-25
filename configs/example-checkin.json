@@ -1,7 +1,7 @@
 {
   "scenarioId": "example-checkin",
   "scenarioName": "示範簽到場景",
-  "uiTheme": { "primary": "#22c55e", "background": "#f8fafc" },
+  "uiTheme": { "primary": "#1e8050", "background": "#f5f6f8" },
   "trigger": "auto",
   "concurrency": "multi-face",
   "dedupWindowMs": 30000,
@@ -12,9 +12,10 @@
   },
   "extraFields": [
     {
-      "key": "withFamily",
-      "label": "家屬陪同",
-      "type": "bool",
+      "key": "companions",
+      "label": "陪同家屬",
+      "type": "multi-text",
+      "placeholder": "輸入家屬姓名",
       "scope": "event",
       "collectOn": "every",
       "required": false

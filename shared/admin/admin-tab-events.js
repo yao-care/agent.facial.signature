@@ -1,4 +1,5 @@
 import * as store from '../face-store.js';
+import { showToast } from '../face-ui.js';
 
 const MODE_LABELS = { checkin: '簽到', alert: '警示' };
 const DECISION_LABELS = {
@@ -91,7 +92,7 @@ export async function mountEventsTab(root, db) {
     const choice = prompt(`輸入人員編號前綴將此紀錄指派給該人員：\n${picks}`);
     if (!choice) return;
     const target = all.find(p => p.id.startsWith(choice));
-    if (!target) { alert('找不到該人員'); return; }
+    if (!target) { showToast(null, '找不到該人員', 'error'); return; }
     await store.updateEvent(db, e.id, {
       personId: target.id,
       needsReview: false,

@@ -1,6 +1,7 @@
 import * as store from '../face-store.js';
 import { isPersisted, getStorageEstimate, requestPersistentStorage } from '../persistent-storage.js';
 import { cosineSimilarity } from '../util-cosine.js';
+import { showToast } from '../face-ui.js';
 
 const TUNING_LABELS = {
   samplingMinFrames: '最少採樣畫面數',
@@ -62,7 +63,7 @@ export async function mountSettingsTab(root, db) {
       overrides[inp.dataset.key] = Number(inp.value);
     });
     await store.putTuning(db, overrides);
-    alert('已儲存');
+    showToast(null, '參數已儲存', 'success');
   });
 
   // storage status
@@ -111,14 +112,14 @@ export async function mountSettingsTab(root, db) {
   });
   root.querySelector('#import-btn').addEventListener('click', async () => {
     const file = root.querySelector('#import-file').files[0];
-    if (!file) { alert('請先選擇備份檔'); return; }
+    if (!file) { showToast(null, '請先選擇備份檔', 'error'); return; }
     if (!confirm('匯入會清空現有所有資料，確定嗎？')) return;
     const pwd = root.querySelector('#import-pwd').value || undefined;
     try {
       await store.importAll(db, file, { password: pwd });
-      alert('匯入成功，請重新整理頁面');
+      showToast(null, '匯入成功，請重新整理頁面', 'success');
     } catch (err) {
-      alert(`匯入失敗：${err.message}`);
+      showToast(null, `匯入失敗：${err.message}`, 'error');
     }
   });
 

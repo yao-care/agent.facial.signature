@@ -10,11 +10,15 @@ export async function accumulateVectors(db, personId, incomingVectors, params) {
     throw new Error(`person ${personId} not found`);
   }
 
-  let current = person.vectors.slice();
+  // 先過濾掉 0-length / null vectors。Float32Array buffer 若曾被 transfer 過會被 detach
+  // 變成 length 0，後續 cosineMax 會 dim mismatch 炸掉。此處是最後一道防線。
+  const validIncoming = (incomingVectors || []).filter(v => v && v.length > 0);
+  // 同時清掉 person 既有 vectors 內可能殘留的 0-length（舊版 bug 可能寫過進去）
+  let current = person.vectors.filter(v => v && v.length > 0);
   const accepted = [];
   const isInitiallyEmpty = current.length === 0;
 
-  for (const v of incomingVectors) {
+  for (const v of validIncoming) {
     if (isInitiallyEmpty) {
       // empty-target fallback: accepts all incoming vectors
       accepted.push(v);

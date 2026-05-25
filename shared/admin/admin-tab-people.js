@@ -1,4 +1,5 @@
 import * as store from '../face-store.js';
+import { showToast } from '../face-ui.js';
 
 export async function mountPeopleTab(root, db) {
   root.innerHTML = `
@@ -73,11 +74,13 @@ export async function mountPeopleTab(root, db) {
       tr.querySelector('.btn-save').addEventListener('click', async () => {
         const name = tr.querySelector('.name-input').value.trim() || null;
         await store.updatePerson(db, p.id, { displayName: name });
+        showToast(null, `已儲存：${name || '（未命名）'}`, 'success');
         render();
       });
       tr.querySelector('.btn-delete').addEventListener('click', async () => {
         if (!confirm(`確定刪除「${p.displayName || '未命名'}」？將同時刪除該人員的所有紀錄與快照，無法復原。`)) return;
         await store.deletePersonCascade(db, p.id);
+        showToast(null, '已刪除', 'success');
         render();
       });
       tr.querySelector('.btn-merge').addEventListener('click', () => openMergeDialog(p.id));
@@ -92,18 +95,19 @@ export async function mountPeopleTab(root, db) {
     const choice = prompt(`輸入要合併到的人員編號前綴：\n${picks}`);
     if (!choice) return;
     const target = all.find(p => p.id.startsWith(choice));
-    if (!target) { alert('找不到該人員'); return; }
+    if (!target) { showToast(null, '找不到該人員', 'error'); return; }
     const tuning = await store.getTuning(db);
     await store.mergePerson(db, fromId, target.id, {
       contaminationGuard: tuning.contaminationGuard,
       vectorsPerPersonCap: tuning.vectorsPerPersonCap,
     });
+    showToast(null, `已合併至「${target.displayName || target.id.slice(0, 8)}」`, 'success');
     render();
   }
 
   async function openSplitDialog(fromId) {
     const events = await store.listEventsByPerson(db, fromId);
-    if (events.length < 2) { alert('紀錄不足，無法拆分'); return; }
+    if (events.length < 2) { showToast(null, '紀錄不足，無法拆分', 'error'); return; }
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
@@ -123,9 +127,10 @@ export async function mountPeopleTab(root, db) {
     overlay.querySelector('.split-cancel').addEventListener('click', () => overlay.remove());
     overlay.querySelector('.split-ok').addEventListener('click', async () => {
       const ids = [...overlay.querySelectorAll('input[type=checkbox]:checked')].map(c => c.value);
-      if (!ids.length) { alert('請至少勾選一筆紀錄'); return; }
+      if (!ids.length) { showToast(null, '請至少勾選一筆紀錄', 'error'); return; }
       await store.splitPerson(db, fromId, { eventIdsToSplit: ids });
       overlay.remove();
+      showToast(null, `已拆分 ${ids.length} 筆紀錄到新人員`, 'success');
       render();
     });
   }

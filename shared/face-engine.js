@@ -115,7 +115,9 @@ function createSession(faceId, tuning) {
 
     // interFrameConsistency：與上一個 vector 比
     const desc = face.embedding || face.descriptor;
-    if (!desc) return;
+    // Human 偶爾回 null / undefined / 空陣列。空陣列在 `!desc` 下 truthy 通過，
+    // 但會產出 0-length Float32Array 後續 cosine 比對會 dim mismatch 炸掉。
+    if (!desc || !desc.length) return;
     const vector = new Float32Array(desc);
 
     let consistency = null;

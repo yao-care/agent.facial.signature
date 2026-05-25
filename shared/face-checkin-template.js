@@ -47,8 +47,8 @@ async function runCheckinInner(config, rootEl) {
   const video = rootEl.querySelector('#cam');
   const camContainer = rootEl.querySelector('.cam-container');
 
-  // 音訊解鎖（iOS）
-  ui.setupAudioUnlock(rootEl);
+  // 語音模式選擇（播報歡迎詞 / 安靜）。iOS 也需要這個手勢來解鎖 audio context。
+  ui.setupAudioChoice(rootEl);
 
   // 5. 開啟資料庫 + 設置相機 + overlay canvas
   const db = await store.openFaceDb();

@@ -1,7 +1,7 @@
 // service-worker.js — cache app shell + Human models + vendor
 // All paths are relative to the SW location so the app works
 // regardless of deployment subpath (root, GH Pages, or internal nested).
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE_APP = `app-shell-${VERSION}`;
 const CACHE_MODELS = `human-models-${VERSION}`;
 
@@ -30,6 +30,7 @@ const APP_SHELL = [
   './shared/face-quality.js',
   './shared/face-ui.js',
   './shared/face-ui.css',
+  './shared/tokens.css',
   './shared/face-worker.js',
   './shared/face-worker-logic.js',
   './shared/face-checkin-template.js',
