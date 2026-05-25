@@ -14,6 +14,13 @@
 </head>
 <body>
   <div id="app"></div>
+  <footer style="padding:16px 24px;font-size:13px;color:#555;border-top:1px solid #e5e7eb;line-height:1.8;">
+    <strong>警示模式流程</strong><br>
+    比對對象：僅警示名單成員（config 的 watchlistId 指定）<br>
+    看到不在名單者：靜默，不記錄<br>
+    看到名單成員：跳出警示 popup，播放警示音效，寫入警示紀錄<br>
+    看到模糊臉：跳出警示 popup 待 review，不自動建檔
+  </footer>
   <script type="module">
     import { registerSW } from './shared/sw-register.js';
     import { runAlert } from './shared/face-alert-template.js';

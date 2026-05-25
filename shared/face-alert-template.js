@@ -65,6 +65,8 @@ async function runAlertInner(config, rootEl) {
   });
 
   const lastAlertTs = new Map();
+  const TONE_BY_ID = { highrisk: 'critical', demented: 'warn', banned: 'critical' };
+  const alertTone = watchlist.tone || TONE_BY_ID[watchlist.id] || 'warn';
 
   engine.on('faceResult', async (result) => {
     if (result.timedOut) return; // 警示模式靜默
@@ -112,6 +114,7 @@ async function runAlertInner(config, rootEl) {
       person,
       message: config.alertMessage,
       sound: config.alertSound,
+      tone: alertTone,
     });
   });
 

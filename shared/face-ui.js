@@ -212,7 +212,7 @@ export function showCheckinResult(rootEl, { decision, person, ttsConfig, watchli
   setTimeout(() => card.remove(), dwell);
 }
 
-export function showAlertPopup(rootEl, { person, message, sound }) {
+export function showAlertPopup(rootEl, { person, message, sound, tone }) {
   const popup = document.createElement('div');
   popup.className = 'alert-popup';
   popup.innerHTML = `
@@ -231,11 +231,46 @@ export function showAlertPopup(rootEl, { person, message, sound }) {
     audio = new Audio(sound.url);
     audio.loop = sound.mode === 'repeat' && sound.repeatUntilDismissed;
     audio.play().catch(() => {});
+  } else if (tone && audioMode !== 'silent') {
+    synthAlertTone(tone);
   }
   popup.querySelector('.alert-dismiss').addEventListener('click', () => {
     audio?.pause();
     popup.remove();
   });
+}
+
+function synthAlertTone(tone) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // critical: 3 短促高頻脈衝（緊急感）; warn: 2 較柔和提示音
+    const patterns = {
+      critical: [
+        { freq: 880, dur: 0.12, gap: 0.07 },
+        { freq: 880, dur: 0.12, gap: 0.07 },
+        { freq: 1047, dur: 0.22, gap: 0 },
+      ],
+      warn: [
+        { freq: 660, dur: 0.18, gap: 0.10 },
+        { freq: 660, dur: 0.18, gap: 0 },
+      ],
+    };
+    const steps = patterns[tone] || patterns.warn;
+    let t = ctx.currentTime + 0.05;
+    for (const s of steps) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = s.freq;
+      osc.type = tone === 'critical' ? 'square' : 'sine';
+      gain.gain.setValueAtTime(0.5, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + s.dur);
+      osc.start(t);
+      osc.stop(t + s.dur);
+      t += s.dur + s.gap;
+    }
+  } catch {}
 }
 
 export function showRetry(rootEl, msg = '請再試一次') {

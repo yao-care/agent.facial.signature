@@ -14,6 +14,13 @@
 </head>
 <body>
   <div id="app"></div>
+  <footer style="padding:16px 24px;font-size:13px;color:#555;border-top:1px solid #e5e7eb;line-height:1.8;">
+    <strong>簽到模式流程</strong><br>
+    比對對象：DB 中所有已建檔人員<br>
+    看到新人：自動建檔，TTS 播報「歡迎」<br>
+    看到已建檔者：TTS 播報姓名，寫入簽到紀錄<br>
+    看到模糊臉：寫入 event 待管理員在「紀錄」tab review
+  </footer>
   <script type="module">
     import { registerSW } from './shared/sw-register.js';
     import { runCheckin } from './shared/face-checkin-template.js';

@@ -1,14 +1,12 @@
 import * as store from '../face-store.js';
 import { showToast } from '../face-ui.js';
 
-// 警示名單預設 — 這裡只放真的需要警示音效的危險類型。
-// 「家屬 / 員工 / 志工 / VIP / 訪客」屬於身份分類，請在「人員」tab
-// 編輯「身份」欄位設定（不需警示音效，純粹標記）。
+// 警示名單固定只有這三種，每種有對應音效 tone。
+// 其他身份分類（家屬/員工/志工/VIP/訪客）在「人員」tab 的「身份」欄位設定。
 const WATCHLIST_PRESETS = [
   { id: 'highrisk', name: '高風險走失', tone: 'critical' },
   { id: 'demented', name: '失智長者',   tone: 'warn' },
   { id: 'banned',   name: '黑名單',     tone: 'critical' },
-  { id: 'custom',   name: '自訂…',      tone: 'neutral' },
 ];
 const TONE_LOOKUP = Object.fromEntries(WATCHLIST_PRESETS.map(p => [p.id, p.tone]));
 
@@ -20,62 +18,22 @@ export async function mountWatchlistsTab(root, db) {
           ${WATCHLIST_PRESETS.map(p => `<option value="${p.id}">${escape(p.name)}（${escape(p.id)}）</option>`).join('')}
         </select>
       </label>
-      <label class="custom-id-wrap" hidden>名單編號
-        <input id="new-id" placeholder="英數字元，例如 evening">
-      </label>
-      <label>顯示名稱
-        <input id="new-name" placeholder="（可空白，預設用名單類型名稱）">
-      </label>
-      <button class="btn btn-primary" id="new-btn">建立新名單</button>
+      <button class="btn btn-primary" id="new-btn">建立名單</button>
     </div>
     <div id="lists"></div>
   `;
 
   const presetSel = root.querySelector('#new-preset');
-  const customWrap = root.querySelector('.custom-id-wrap');
-  const idInput = root.querySelector('#new-id');
-  const nameInput = root.querySelector('#new-name');
-
-  function applyPreset() {
-    const presetId = presetSel.value;
-    if (presetId === 'custom') {
-      customWrap.hidden = false;
-      nameInput.placeholder = '請輸入名稱';
-    } else {
-      customWrap.hidden = true;
-      const preset = WATCHLIST_PRESETS.find(p => p.id === presetId);
-      nameInput.placeholder = preset?.name || '';
-    }
-  }
-  presetSel.addEventListener('change', applyPreset);
-  applyPreset();
 
   root.querySelector('#new-btn').addEventListener('click', async () => {
     const presetId = presetSel.value;
-    let id, defaultName;
-    if (presetId === 'custom') {
-      id = idInput.value.trim();
-      if (!id) { showToast(null, '請輸入自訂名單編號', 'error'); return; }
-      if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
-        showToast(null, '名單編號只能用英數、底線或連字號', 'error');
-        return;
-      }
-      defaultName = id;
-    } else {
-      id = presetId;
-      const preset = WATCHLIST_PRESETS.find(p => p.id === presetId);
-      defaultName = preset.name;
-    }
-    // 檢查重複
-    if (await store.getWatchlist(db, id)) {
-      showToast(null, `名單「${id}」已存在`, 'error');
+    const preset = WATCHLIST_PRESETS.find(p => p.id === presetId);
+    if (await store.getWatchlist(db, presetId)) {
+      showToast(null, `名單「${preset.name}」已存在`, 'error');
       return;
     }
-    const name = nameInput.value.trim() || defaultName;
-    await store.createWatchlist(db, { id, name });
-    idInput.value = '';
-    nameInput.value = '';
-    showToast(null, `已建立名單「${name}」`, 'success');
+    await store.createWatchlist(db, { id: presetId, name: preset.name });
+    showToast(null, `已建立名單「${preset.name}」`, 'success');
     render();
   });
 
