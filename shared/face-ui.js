@@ -8,43 +8,48 @@ export function getAudioMode() { return audioMode; }
 export function setAudioMode(mode) { audioMode = mode; }
 
 /**
- * 在頁面開啟時顯示「啟用語音」遮罩，讓使用者明確選擇：
- *  - 「播報歡迎詞」→ audioMode='tts'，並觸發一次空語音以解鎖 audio context
- *  - 「不用」 → audioMode='silent'
+ * 顯示「啟用語音播報？」遮罩，讓使用者明確選擇後才繼續。
+ * 回傳 Promise<'tts' | 'silent'>，呼叫端應 await 它再開相機/啟動引擎，
+ * 避免動線同時跳多個系統提示（相機權限 + 語音 dialog 重疊很亂）。
+ *
+ * 已選過時直接回傳當前模式，不再顯示。
  */
 export function setupAudioChoice(rootEl) {
-  if (audioMode !== 'unset') return;
-  const overlay = document.createElement('div');
-  overlay.className = 'audio-unlock-overlay';
-  overlay.innerHTML = `
-    <div class="audio-unlock-card">
-      <h2>是否開啟語音播報？</h2>
-      <p>系統可在識別到您時，以中文語音說「歡迎光臨」。<br/>您可選擇開啟或保持安靜，重新整理頁面時可再次選擇。</p>
-      <div class="audio-actions">
-        <button class="btn-modal btn-modal-cancel" data-choice="silent">不用，謝謝</button>
-        <button class="btn-modal btn-modal-primary" data-choice="tts">開啟語音播報</button>
+  if (audioMode !== 'unset') return Promise.resolve(audioMode);
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.className = 'audio-unlock-overlay';
+    overlay.innerHTML = `
+      <div class="audio-unlock-card">
+        <h2>是否開啟語音播報？</h2>
+        <p>系統可在識別到您時，以中文語音說「歡迎光臨」。<br/>您可選擇開啟或保持安靜，重新整理頁面時可再次選擇。</p>
+        <div class="audio-actions">
+          <button class="btn-modal btn-modal-cancel" data-choice="silent">不用，謝謝</button>
+          <button class="btn-modal btn-modal-primary" data-choice="tts">開啟語音播報</button>
+        </div>
       </div>
-    </div>
-  `;
-  rootEl.appendChild(overlay);
-  overlay.querySelectorAll('[data-choice]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const choice = btn.dataset.choice;
-      audioMode = choice;
-      if (choice === 'tts') {
-        // 在使用者手勢內觸發空語音，解鎖 audio context（iOS 需要）
-        try {
-          const u = new SpeechSynthesisUtterance(' ');
-          u.volume = 0;
-          speechSynthesis.speak(u);
-        } catch {}
-      }
-      overlay.remove();
+    `;
+    rootEl.appendChild(overlay);
+    overlay.querySelectorAll('[data-choice]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const choice = btn.dataset.choice;
+        audioMode = choice;
+        if (choice === 'tts') {
+          // 在使用者手勢內觸發空語音，解鎖 audio context（iOS 需要）
+          try {
+            const u = new SpeechSynthesisUtterance(' ');
+            u.volume = 0;
+            speechSynthesis.speak(u);
+          } catch {}
+        }
+        overlay.remove();
+        resolve(choice);
+      });
     });
   });
 }
 
-// 向後相容舊名稱（template 還在使用）
+// 向後相容舊名稱
 export const setupAudioUnlock = setupAudioChoice;
 
 export async function setupCamera(videoEl) {

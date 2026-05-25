@@ -47,10 +47,11 @@ async function runCheckinInner(config, rootEl) {
   const video = rootEl.querySelector('#cam');
   const camContainer = rootEl.querySelector('.cam-container');
 
-  // 語音模式選擇（播報歡迎詞 / 安靜）。iOS 也需要這個手勢來解鎖 audio context。
-  ui.setupAudioChoice(rootEl);
+  // 5. 語音模式選擇 — 一定要等使用者點下去再繼續，避免相機權限
+  //    彈窗與語音 dialog 同時跳出，動線會很亂。也順便當 iOS audio 解鎖手勢。
+  await ui.setupAudioChoice(rootEl);
 
-  // 5. 開啟資料庫 + 設置相機 + overlay canvas
+  // 6. 開啟資料庫 + 設置相機 + overlay canvas
   const db = await store.openFaceDb();
   try {
     await ui.setupCamera(video);
@@ -60,7 +61,7 @@ async function runCheckinInner(config, rootEl) {
   }
   const overlay = ui.createOverlayCanvas(video, camContainer);
 
-  // 6. 啟動引擎 — 帶 tuning 參數、支援 single-roi 並行模式
+  // 7. 啟動引擎 — 帶 tuning 參數、支援 single-roi 並行模式
   const tuning = await store.getTuning(db);
   const roiBox = config.concurrency === 'single-roi' ? computeCenterRoi(video) : null;
 
@@ -77,7 +78,7 @@ async function runCheckinInner(config, rootEl) {
     if (roiBox) ui.drawRoi(overlay, roiBox);
   });
 
-  // 7. 去重節流：記錄每個 personId 最後寫 event 的時間（防止毫秒級重複）
+  // 8. 去重節流：記錄每個 personId 最後寫 event 的時間（防止毫秒級重複）
   const lastEventTs = new Map();
 
   // === 主流程：faceResult → match → decision → consent/extraFields → write ===
