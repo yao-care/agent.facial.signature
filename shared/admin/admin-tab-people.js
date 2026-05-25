@@ -1,6 +1,20 @@
 import * as store from '../face-store.js';
 import { showToast } from '../face-ui.js';
 
+// 身份分類（人員 meta 中的「身份」欄位選項）。「警示名單」只放需要
+// 警示音效的危險類型（高風險走失 / 失智長者 / 黑名單）；身份僅
+// 用來標記，影響畫面顏色但不觸發警示音效。
+const IDENTITY_OPTIONS = [
+  { value: '',        label: '（未設定）',  tone: 'neutral' },
+  { value: '長者',     label: '長者 / 居民', tone: 'neutral' },
+  { value: '家屬',     label: '家屬',         tone: 'pink' },
+  { value: '員工',     label: '員工',         tone: 'info' },
+  { value: '志工',     label: '志工',         tone: 'pass' },
+  { value: '重要訪客', label: '重要訪客',     tone: 'purple' },
+  { value: '訪客',     label: '一般訪客',     tone: 'neutral' },
+];
+const IDENTITY_TONE = Object.fromEntries(IDENTITY_OPTIONS.map(o => [o.value, o.tone]));
+
 export async function mountPeopleTab(root, db, { onViewEvents } = {}) {
   // 模型版本只在 v1/v2 過渡期才有用；多版本時才顯示 filter
   const allPeopleForCheck = await store.listPeople(db);
@@ -94,9 +108,16 @@ export async function mountPeopleTab(root, db, { onViewEvents } = {}) {
         ? `<button class="btn btn-count" data-id="${p.id}" title="點擊查看完整紀錄">${dailyLines}</button>`
         : '<span style="color:var(--text-muted);">—</span>';
       const metaPreview = renderMeta(p.meta);
+      const identity = (p.meta || {})['身份'];
+      const identityBadge = identity
+        ? `<span class="identity-badge tone-${IDENTITY_TONE[identity] || 'neutral'}">${escape(identity)}</span>`
+        : '';
       tr.innerHTML = `
         <td>${thumb}</td>
-        <td><input class="name-input" value="${escape(p.displayName || '')}" placeholder="（未命名）"></td>
+        <td>
+          <input class="name-input" value="${escape(p.displayName || '')}" placeholder="（未命名）">
+          ${identityBadge}
+        </td>
         <td>${dailyCell}</td>
         <td>${last ? formatRelative(last.timestamp) : '—'}</td>
         <td><button class="btn btn-sm btn-edit-meta" data-id="${p.id}">${metaPreview}</button></td>
@@ -135,19 +156,32 @@ export async function mountPeopleTab(root, db, { onViewEvents } = {}) {
   function openMetaEditor(p) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
-    const entries = Object.entries(p.meta || {});
-    // 常見欄位放在 datalist 給快速選擇
-    const COMMON_KEYS = ['電話', '關係', '緊急聯絡人', '地址', '生日', '備註', '性別', '年齡'];
+    const meta = p.meta || {};
+    const currentIdentity = meta['身份'] || '';
+    // 排除身份這個 key 從一般 key-value rows（會單獨用下拉處理）
+    const otherEntries = Object.entries(meta).filter(([k]) => k !== '身份');
     overlay.innerHTML = `
       <div class="modal meta-modal">
         <h2>編輯「${escape(p.displayName || '未命名')}」的備註</h2>
-        <p class="hint">這裡的欄位可以自由新增。常用：電話、關係、緊急聯絡人、地址、備註…</p>
-        <datalist id="meta-keys"><!--
-          --><option value="電話"><option value="關係"><option value="緊急聯絡人">
+
+        <div class="identity-block">
+          <label class="identity-label">身份分類</label>
+          <select class="identity-select" id="identity-select">
+            ${IDENTITY_OPTIONS.map(o =>
+              `<option value="${escape(o.value)}" ${o.value === currentIdentity ? 'selected' : ''}>${escape(o.label)}</option>`
+            ).join('')}
+          </select>
+          <p class="hint">識別到時會用此身份的顏色標記。危險類型（高風險走失、失智長者、黑名單）請在「警示名單」tab 設定，那裡會觸發警示音效。</p>
+        </div>
+
+        <h3 style="margin-top:24px;">其他備註</h3>
+        <p class="hint">電話、關係、緊急聯絡人、地址、生日… 等自由欄位。</p>
+        <datalist id="meta-keys">
+          <option value="電話"><option value="關係"><option value="緊急聯絡人">
           <option value="地址"><option value="生日"><option value="備註">
         </datalist>
         <div class="meta-rows" id="meta-rows">
-          ${entries.length === 0 ? renderMetaRow('', '') : entries.map(([k, v]) => renderMetaRow(k, v)).join('')}
+          ${otherEntries.length === 0 ? renderMetaRow('', '') : otherEntries.map(([k, v]) => renderMetaRow(k, v)).join('')}
         </div>
         <button class="btn meta-add" id="meta-add">+ 新增一欄</button>
         <div class="consent-actions">
@@ -171,17 +205,16 @@ export async function mountPeopleTab(root, db, { onViewEvents } = {}) {
     overlay.querySelector('.meta-cancel').addEventListener('click', () => overlay.remove());
     overlay.querySelector('.meta-save').addEventListener('click', async () => {
       const next = {};
+      // 身份單獨從下拉抓
+      const identity = overlay.querySelector('#identity-select').value;
+      if (identity) next['身份'] = identity;
+      // 其他 key-value rows
       rowsEl.querySelectorAll('.meta-row').forEach(row => {
         const k = row.querySelector('.meta-key').value.trim();
         const v = row.querySelector('.meta-val').value.trim();
-        if (k) next[k] = v;
+        if (k && k !== '身份') next[k] = v;
       });
-      // updatePerson 會把 patch.meta 與既有 meta 合併；我們要 *取代*，
-      // 所以先呼一次 update 把 meta 設成 next（但會 merge）— 改為先抓
-      // 既存 meta，找出被刪掉的 keys，逐一刪掉，再 patch 進新值
-      const current = await store.getPerson(db, p.id);
-      const removed = Object.keys(current.meta || {}).filter(k => !(k in next));
-      // 採直接覆寫的方式：用低層 put 重寫整個 person，繞過 updatePerson 的 merge
+      // 直接覆寫（繞過 updatePerson 的 merge），讓刪 key 真的刪掉
       const tx = db.transaction('people', 'readwrite');
       const fresh = await tx.store.get(p.id);
       fresh.meta = next;

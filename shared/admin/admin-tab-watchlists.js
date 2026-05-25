@@ -1,17 +1,14 @@
 import * as store from '../face-store.js';
 import { showToast } from '../face-ui.js';
 
-// 常用名單預設 — 編號（內部用）與顯示名稱、視覺主題色
-// color tone 對應 design-tokens 中的語意色（badge-bg-* + color-*）
+// 警示名單預設 — 這裡只放真的需要警示音效的危險類型。
+// 「家屬 / 員工 / 志工 / VIP / 訪客」屬於身份分類，請在「人員」tab
+// 編輯「身份」欄位設定（不需警示音效，純粹標記）。
 const WATCHLIST_PRESETS = [
-  { id: 'highrisk',   name: '高風險走失', tone: 'critical' },
-  { id: 'demented',   name: '失智長者',   tone: 'warn' },
-  { id: 'banned',     name: '黑名單',     tone: 'critical' },
-  { id: 'vip',        name: '重要訪客',   tone: 'purple' },
-  { id: 'staff',      name: '員工',       tone: 'info' },
-  { id: 'volunteer',  name: '志工',       tone: 'pass' },
-  { id: 'family',     name: '家屬',       tone: 'pink' },
-  { id: 'custom',     name: '自訂…',      tone: 'neutral' },
+  { id: 'highrisk', name: '高風險走失', tone: 'critical' },
+  { id: 'demented', name: '失智長者',   tone: 'warn' },
+  { id: 'banned',   name: '黑名單',     tone: 'critical' },
+  { id: 'custom',   name: '自訂…',      tone: 'neutral' },
 ];
 const TONE_LOOKUP = Object.fromEntries(WATCHLIST_PRESETS.map(p => [p.id, p.tone]));
 

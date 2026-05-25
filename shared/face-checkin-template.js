@@ -134,7 +134,7 @@ async function runCheckinInner(config, rootEl) {
       if (Date.now() - last < config.dedupWindowMs) {
         // 在 dedup window 內 → 僅顯示結果，跳過 event 寫入與向量回寫
         person = await store.getPerson(db, personId);
-        const watchlistInfo = await findHighestPriorityWatchlist(db, personId);
+        const watchlistInfo = await findPersonTag(db, personId);
         ui.showCheckinResult(rootEl, { decision, person, ttsConfig: config.tts, watchlistInfo });
         return;
       }
@@ -190,7 +190,7 @@ async function runCheckinInner(config, rootEl) {
     });
 
     // === UI 反饋 — 含警示名單身份標籤（影響卡片顏色） ===
-    const watchlistInfo = await findHighestPriorityWatchlist(db, personId);
+    const watchlistInfo = await findPersonTag(db, personId);
     ui.showCheckinResult(rootEl, { decision, person, ttsConfig: config.tts, watchlistInfo });
   });
 
@@ -256,31 +256,50 @@ async function pickExtraFields(db, fields, decision, _personId, _matchResult) {
   return result;
 }
 
-// 名單類型 → tone 與優先級（critical 最高，多名單命中時取最高者）
+// 警示名單類型 → tone 與優先級（critical 最高，多名單命中時取最高者）
+// 只放真正需要警示的危險類型；身份分類（家屬/員工等）已移到人員 meta
 const WATCHLIST_META = {
-  highrisk:  { tone: 'critical', name: '高風險走失', priority: 100 },
-  banned:    { tone: 'critical', name: '黑名單',     priority: 95  },
-  demented:  { tone: 'warn',     name: '失智長者',   priority: 80  },
-  vip:       { tone: 'purple',   name: '重要訪客',   priority: 60  },
-  staff:     { tone: 'info',     name: '員工',       priority: 40  },
-  volunteer: { tone: 'pass',     name: '志工',       priority: 30  },
-  family:    { tone: 'pink',     name: '家屬',       priority: 20  },
+  highrisk: { tone: 'critical', name: '高風險走失', priority: 100 },
+  banned:   { tone: 'critical', name: '黑名單',     priority: 95  },
+  demented: { tone: 'warn',     name: '失智長者',   priority: 80  },
 };
 
-async function findHighestPriorityWatchlist(db, personId) {
+// 身份分類（人員 meta 中的「身份」欄位） → tone
+const IDENTITY_TONE = {
+  '家屬':     'pink',
+  '員工':     'info',
+  '志工':     'pass',
+  '重要訪客': 'purple',
+  '訪客':     'neutral',
+  '長者':     'neutral',
+};
+
+/**
+ * 取得人員的最高優先級「視覺標籤」：
+ *   - 優先取警示名單（危險類別，會延長卡片顯示時間）
+ *   - 否則 fallback 到 meta.身份（純標記，不延時）
+ */
+async function findPersonTag(db, personId) {
   if (!personId) return null;
+  // 1. 警示名單（最高優先）
   const wls = await store.findWatchlistsContaining(db, personId);
-  if (!wls.length) return null;
   let best = null;
   let bestPriority = -1;
   for (const wl of wls) {
     const meta = WATCHLIST_META[wl.id] || { tone: 'neutral', name: wl.name, priority: 0 };
     if (meta.priority > bestPriority) {
-      best = { id: wl.id, tone: meta.tone, label: meta.name };
+      best = { id: wl.id, tone: meta.tone, label: meta.name, isAlert: true };
       bestPriority = meta.priority;
     }
   }
-  return best;
+  if (best) return best;
+  // 2. fallback：身份標記
+  const p = await store.getPerson(db, personId);
+  const identity = p?.meta?.['身份'];
+  if (identity) {
+    return { tone: IDENTITY_TONE[identity] || 'neutral', label: identity, isAlert: false };
+  }
+  return null;
 }
 
 function extractPersonMeta(fields, values) {

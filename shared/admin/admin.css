@@ -140,6 +140,43 @@ table.admin-table {
   border-style: dashed;
 }
 
+/* 身份分類專屬區塊（在 meta editor 內） */
+.identity-block {
+  padding: 16px;
+  background: var(--bg-surface);
+  border-radius: 8px;
+  margin: 16px 0;
+}
+.identity-label {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.identity-select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: var(--bg-base);
+  font-size: var(--text-base);
+}
+.identity-block .hint { margin: 8px 0 0; font-size: var(--text-xs); }
+
+/* 人員 tab 姓名旁的身份徽章 */
+.identity-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  background: var(--tone-bg, var(--bg-overlay));
+  color: var(--tone-color, var(--text-secondary));
+  vertical-align: middle;
+}
+
 /* 警示名單：建立新名單表單 — 用 grid 排，每欄都有足夠寬度 */
 .new-list-form {
   display: grid;
