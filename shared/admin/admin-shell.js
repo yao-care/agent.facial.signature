@@ -2,7 +2,8 @@ import * as store from '../face-store.js';
 import { mountPeopleTab } from './admin-tab-people.js';
 import { mountEventsTab } from './admin-tab-events.js';
 import { mountWatchlistsTab } from './admin-tab-watchlists.js';
-import { mountSettingsTab } from './admin-tab-settings.js';
+import { mountTuningTab } from './admin-tab-tuning.js';
+import { mountSystemTab } from './admin-tab-system.js';
 
 export async function mountAdmin(rootEl) {
   const db = await store.openFaceDb();
@@ -18,7 +19,8 @@ export async function mountAdmin(rootEl) {
       return mountEventsTab(rootEl, db, { initialPersonId: personId });
     },
     watchlists: () => mountWatchlistsTab(rootEl, db),
-    settings: () => mountSettingsTab(rootEl, db),
+    tuning: () => mountTuningTab(rootEl, db),
+    system: () => mountSystemTab(rootEl, db),
   };
 
   function activateTab(name) {
