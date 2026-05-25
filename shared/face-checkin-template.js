@@ -71,6 +71,12 @@ async function runCheckinInner(config, rootEl) {
     singleRoiBox: roiBox,
   });
 
+  // 即時把偵測到的人臉框 + 進度條畫在 overlay canvas
+  engine.on('frameTick', ({ faces }) => {
+    ui.drawFaceBoxes(overlay, faces);
+    if (roiBox) ui.drawRoi(overlay, roiBox);
+  });
+
   // 7. 去重節流：記錄每個 personId 最後寫 event 的時間（防止毫秒級重複）
   const lastEventTs = new Map();
 

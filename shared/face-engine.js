@@ -75,7 +75,19 @@ export async function createFaceEngine({ videoElement, tuning, concurrency = 'mu
         }
       }
 
-      emit('frameTick', { faceCount: faces.length, sessionCount: sessions.size });
+      // 為 UI 疊圖（人臉框 + 進度條）建立 normalized face data
+      const faceData = faces.map(face => {
+        const faceId = face.id ?? `${Math.round(face.box[0])}-${Math.round(face.box[1])}`;
+        const sess = sessions.get(faceId);
+        return {
+          faceId,
+          box: face.box,
+          framesCollected: sess?.framesCollected ?? 0,
+          targetFrames: tuning.samplingMinFrames,
+          done: sess?.done ?? false,
+        };
+      });
+      emit('frameTick', { faces: faceData, faceCount: faces.length, sessionCount: sessions.size });
       await new Promise(r => requestAnimationFrame(r));
     }
   }
@@ -159,6 +171,8 @@ function createSession(faceId, tuning) {
     faceId,
     get lastSeenTs() { return lastSeenTs; },
     set lastSeenTs(v) { lastSeenTs = v; },
+    get framesCollected() { return vectors.length; },
+    get done() { return done; },
     feedFrame,
   };
 }

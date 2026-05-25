@@ -79,21 +79,39 @@ export function createOverlayCanvas(videoEl, parent) {
   return canvas;
 }
 
-export function drawFaceBoxes(canvas, faces, sessionsMeta) {
+/**
+ * 在 canvas 上畫人臉框 + 進度條。
+ * faceData: Array<{ faceId, box, framesCollected, targetFrames, done }>
+ */
+export function drawFaceBoxes(canvas, faceData) {
+  if (!canvas) return;
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  for (const face of faces) {
-    const [x, y, w, h] = face.box;
-    ctx.strokeStyle = '#1e8050';
-    ctx.lineWidth = 3;
+  for (const f of faceData || []) {
+    if (!f.box) continue;
+    const [x, y, w, h] = f.box;
+    const pct = f.targetFrames > 0 ? Math.min(1, f.framesCollected / f.targetFrames) : 0;
+
+    // 人臉框：done = 綠色 / sampling = 黃綠 / idle = 灰
+    if (f.done) ctx.strokeStyle = '#1e8050';
+    else if (pct > 0) ctx.strokeStyle = '#1e8050';
+    else ctx.strokeStyle = '#8a8c98';
+    ctx.lineWidth = 4;
     ctx.strokeRect(x, y, w, h);
-    const sess = sessionsMeta?.get(face.id);
-    if (sess) {
-      const pct = Math.min(1, sess.framesCollected / sess.targetFrames);
-      ctx.fillStyle = 'rgba(30, 128, 80, 0.3)';
-      ctx.fillRect(x, y - 12, w, 6);
+
+    // 進度條（框上方 10px 寬度與框同）
+    if (pct > 0 || f.done) {
+      const barY = Math.max(0, y - 18);
+      const barH = 10;
+      ctx.fillStyle = 'rgba(220, 224, 230, 0.85)';
+      ctx.fillRect(x, barY, w, barH);
       ctx.fillStyle = '#1e8050';
-      ctx.fillRect(x, y - 12, w * pct, 6);
+      ctx.fillRect(x, barY, w * pct, barH);
+      // 進度文字（框右上）
+      ctx.fillStyle = '#1e2030';
+      ctx.font = 'bold 20px sans-serif';
+      const text = f.done ? '✓ 完成' : `${f.framesCollected} / ${f.targetFrames}`;
+      ctx.fillText(text, x + w + 8, barY + barH);
     }
   }
 }

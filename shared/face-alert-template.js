@@ -50,13 +50,18 @@ async function runAlertInner(config, rootEl) {
     rootEl.innerHTML = `<div class="error">無法開啟攝影機：${escape(err.message)}。請確認瀏覽器已授權相機、且沒有其他程式佔用。</div>`;
     return;
   }
-  ui.createOverlayCanvas(video, camContainer);
+  const overlay = ui.createOverlayCanvas(video, camContainer);
 
   const tuning = await store.getTuning(db);
   const engine = await createFaceEngine({
     videoElement: video,
     tuning,
     concurrency: config.concurrency,
+  });
+
+  // 即時人臉框 + 進度條
+  engine.on('frameTick', ({ faces }) => {
+    ui.drawFaceBoxes(overlay, faces);
   });
 
   const lastAlertTs = new Map();

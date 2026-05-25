@@ -11,8 +11,20 @@ const DECISION_LABELS = {
 const SCOPE_LABELS = { global: '全庫', watchlist: '名單' };
 const REVIEW_LABELS = { assigned: '已指派', created: '已建檔', ignored: '已忽略' };
 
-export async function mountEventsTab(root, db) {
+export async function mountEventsTab(root, db, { initialPersonId } = {}) {
+  let personFilter = initialPersonId || null;
+  let personFilterName = null;
+  if (personFilter) {
+    const p = await store.getPerson(db, personFilter);
+    personFilterName = p?.displayName || personFilter.slice(0, 8);
+  }
+
   root.innerHTML = `
+    ${personFilter ? `
+      <div class="filter-row" style="background: var(--badge-bg-info); padding: 12px 16px; border-radius: 8px;">
+        正在查看「${escape(personFilterName)}」的紀錄
+        <button class="btn" id="clear-person">取消篩選</button>
+      </div>` : ''}
     <div class="filter-row">
       <label>類型 <select id="f-mode">
         <option value="all">全部</option>
@@ -37,6 +49,13 @@ export async function mountEventsTab(root, db) {
     </table>
   `;
 
+  root.querySelector('#clear-person')?.addEventListener('click', () => {
+    personFilter = null;
+    personFilterName = null;
+    // 重新 mount tab 以隱藏 banner
+    mountEventsTab(root, db, {});
+  });
+
   async function render() {
     const tbody = root.querySelector('#ev-tbody');
     let events = await store.listEvents(db);
@@ -46,6 +65,7 @@ export async function mountEventsTab(root, db) {
     const scenario = root.querySelector('#f-scenario').value.trim();
 
     events = events
+      .filter(e => !personFilter || e.personId === personFilter)
       .filter(e => mode === 'all' || e.mode === mode)
       .filter(e => dec === 'all' || e.decision === dec)
       .filter(e => !onlyPending || e.needsReview === true)

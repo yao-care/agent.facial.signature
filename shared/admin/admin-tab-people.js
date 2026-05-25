@@ -1,7 +1,7 @@
 import * as store from '../face-store.js';
 import { showToast } from '../face-ui.js';
 
-export async function mountPeopleTab(root, db) {
+export async function mountPeopleTab(root, db, { onViewEvents } = {}) {
   root.innerHTML = `
     <div class="filter-row">
       <input id="search" placeholder="搜尋姓名 / 備註">
@@ -16,7 +16,7 @@ export async function mountPeopleTab(root, db) {
     </div>
     <table class="admin-table">
       <thead><tr>
-        <th>快照</th><th>姓名</th><th>最後活動</th><th>辨識模型</th><th>備註</th><th>操作</th>
+        <th>快照</th><th>姓名</th><th>簽到次數</th><th>最後簽到</th><th>辨識模型</th><th>備註</th><th>操作</th>
       </tr></thead>
       <tbody id="people-tbody"></tbody>
     </table>
@@ -27,9 +27,12 @@ export async function mountPeopleTab(root, db) {
     const all = await store.listPeople(db);
     const events = await store.listEvents(db);
     const lastEvent = new Map();
+    const countByPerson = new Map();
     for (const e of events) {
+      if (!e.personId) continue;
       const prev = lastEvent.get(e.personId);
       if (!prev || e.timestamp > prev.timestamp) lastEvent.set(e.personId, e);
+      countByPerson.set(e.personId, (countByPerson.get(e.personId) || 0) + 1);
     }
     const filter = root.querySelector('#filter-named').value;
     const search = root.querySelector('#search').value.trim().toLowerCase();
@@ -56,9 +59,11 @@ export async function mountPeopleTab(root, db) {
       const last = lastEvent.get(p.id);
       const snapBlob = last?.snapshotId ? await safeReadSnapshot(last.snapshotId) : null;
       const thumb = snapBlob ? `<img class="thumb" src="${URL.createObjectURL(snapBlob)}">` : '—';
+      const count = countByPerson.get(p.id) || 0;
       tr.innerHTML = `
         <td>${thumb}</td>
         <td><input class="name-input" value="${escape(p.displayName || '')}" placeholder="（未命名）"></td>
+        <td><button class="btn btn-count" data-id="${p.id}">${count} 次</button></td>
         <td>${last ? new Date(last.timestamp).toLocaleString() : '—'}</td>
         <td>${escape(p.modelVersion)}</td>
         <td><code>${escape(JSON.stringify(p.meta || {}))}</code></td>
@@ -71,6 +76,9 @@ export async function mountPeopleTab(root, db) {
       `;
       tbody.appendChild(tr);
 
+      tr.querySelector('.btn-count').addEventListener('click', () => {
+        if (onViewEvents) onViewEvents(p.id);
+      });
       tr.querySelector('.btn-save').addEventListener('click', async () => {
         const name = tr.querySelector('.name-input').value.trim() || null;
         await store.updatePerson(db, p.id, { displayName: name });
