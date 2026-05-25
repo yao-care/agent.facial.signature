@@ -24,7 +24,7 @@ export async function mountPeopleTab(root, db, { onViewEvents } = {}) {
     </div>
     <table class="admin-table">
       <thead><tr>
-        <th>快照</th><th>姓名</th><th>近 3 日簽到（今 / 昨 / 前）</th><th>最後簽到</th><th>備註</th><th>操作</th>
+        <th>快照</th><th>姓名</th><th>近 3 日簽到</th><th>最後簽到</th><th>備註</th><th class="col-actions">操作</th>
       </tr></thead>
       <tbody id="people-tbody"></tbody>
     </table>
@@ -36,26 +36,36 @@ export async function mountPeopleTab(root, db, { onViewEvents } = {}) {
     d.setDate(d.getDate() - offsetDays);
     return d.getTime();
   }
-  const today0 = dayStart(0);
-  const tomorrow0 = dayStart(-1);
-  const yesterday0 = dayStart(1);
-  const dayBefore0 = dayStart(2);
+  // 近 3 日的日界（今/昨/前），對應 MM/DD 標籤
+  const dayBuckets = [0, 1, 2].map(offset => {
+    const startOfDay = dayStart(offset);
+    const endOfDay = dayStart(offset - 1);
+    const d = new Date(startOfDay);
+    return {
+      start: startOfDay,
+      end: endOfDay,
+      label: `${d.getMonth() + 1}/${d.getDate()}`,
+    };
+  });
 
   async function render() {
     const tbody = root.querySelector('#people-tbody');
     const all = await store.listPeople(db);
     const events = await store.listEvents(db);
     const lastEvent = new Map();
-    const dailyByPerson = new Map(); // personId -> { today, yest, prev }
+    const dailyByPerson = new Map(); // personId -> [count_today, count_yest, count_prev]
     for (const e of events) {
       if (!e.personId) continue;
       const prev = lastEvent.get(e.personId);
       if (!prev || e.timestamp > prev.timestamp) lastEvent.set(e.personId, e);
-      let bucket = dailyByPerson.get(e.personId);
-      if (!bucket) { bucket = { today: 0, yest: 0, prev: 0 }; dailyByPerson.set(e.personId, bucket); }
-      if (e.timestamp >= today0 && e.timestamp < tomorrow0) bucket.today++;
-      else if (e.timestamp >= yesterday0 && e.timestamp < today0) bucket.yest++;
-      else if (e.timestamp >= dayBefore0 && e.timestamp < yesterday0) bucket.prev++;
+      let counts = dailyByPerson.get(e.personId);
+      if (!counts) { counts = [0, 0, 0]; dailyByPerson.set(e.personId, counts); }
+      for (let i = 0; i < dayBuckets.length; i++) {
+        if (e.timestamp >= dayBuckets[i].start && e.timestamp < dayBuckets[i].end) {
+          counts[i]++;
+          break;
+        }
+      }
     }
     const filter = root.querySelector('#filter-named').value;
     const search = root.querySelector('#search').value.trim().toLowerCase();
@@ -75,11 +85,14 @@ export async function mountPeopleTab(root, db, { onViewEvents } = {}) {
       const last = lastEvent.get(p.id);
       const snapBlob = last?.snapshotId ? await safeReadSnapshot(last.snapshotId) : null;
       const thumb = snapBlob ? `<img class="thumb" src="${URL.createObjectURL(snapBlob)}">` : '—';
-      const daily = dailyByPerson.get(p.id) || { today: 0, yest: 0, prev: 0 };
-      const dailyCell = `<button class="btn btn-count" data-id="${p.id}" title="點擊查看完整紀錄">
-        <strong style="font-size:24px;color:var(--color-pass);">${daily.today}</strong>
-        <span style="color:var(--text-muted);">/ ${daily.yest} / ${daily.prev}</span>
-      </button>`;
+      const counts = dailyByPerson.get(p.id) || [0, 0, 0];
+      const dailyLines = dayBuckets
+        .map((b, i) => counts[i] > 0 ? `<div>${b.label} <strong>${counts[i]}</strong> 次</div>` : null)
+        .filter(Boolean)
+        .join('');
+      const dailyCell = dailyLines
+        ? `<button class="btn btn-count" data-id="${p.id}" title="點擊查看完整紀錄">${dailyLines}</button>`
+        : '<span style="color:var(--text-muted);">—</span>';
       const metaPreview = renderMeta(p.meta);
       tr.innerHTML = `
         <td>${thumb}</td>
@@ -87,11 +100,13 @@ export async function mountPeopleTab(root, db, { onViewEvents } = {}) {
         <td>${dailyCell}</td>
         <td>${last ? formatRelative(last.timestamp) : '—'}</td>
         <td>${metaPreview}</td>
-        <td>
-          <button class="btn btn-save" data-id="${p.id}">儲存</button>
-          <button class="btn btn-merge" data-id="${p.id}">合併到…</button>
-          <button class="btn btn-split" data-id="${p.id}">拆分</button>
-          <button class="btn btn-danger btn-delete" data-id="${p.id}">刪除</button>
+        <td class="col-actions">
+          <div class="action-buttons">
+            <button class="btn btn-sm btn-save" data-id="${p.id}">儲存</button>
+            <button class="btn btn-sm btn-merge" data-id="${p.id}">合併</button>
+            <button class="btn btn-sm btn-split" data-id="${p.id}">拆分</button>
+            <button class="btn btn-sm btn-danger btn-delete" data-id="${p.id}">刪除</button>
+          </div>
         </td>
       `;
       tbody.appendChild(tr);

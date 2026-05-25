@@ -3,8 +3,8 @@
 export const DEFAULT_TUNING = {
   id: 'tuning',
   // 採樣（待校準）
-  samplingMinFrames: 5,
-  samplingMaxDurationMs: 5000,
+  samplingMinFrames: 12,
+  samplingMaxDurationMs: 6000,
   samplingNoFaceTimeoutMs: 1500,
   samplingMinFaceSize: 100,
   qualityFactorThresholds: {

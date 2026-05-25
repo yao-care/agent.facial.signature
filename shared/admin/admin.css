@@ -72,6 +72,29 @@ table.admin-table {
   color: white;
   border-color: var(--color-critical);
 }
+.btn-sm {
+  padding: 6px 10px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+/* 操作欄：固定窄寬度 + 按鈕 wrap 成 2x2 */
+.col-actions { width: 1%; white-space: nowrap; }
+.action-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  min-width: 140px;
+}
+
+/* 近 3 日簽到按鈕：行內表格樣式 */
+.btn-count {
+  text-align: left;
+  padding: 8px 12px;
+  line-height: 1.4;
+}
+.btn-count div { font-size: var(--text-sm); }
+.btn-count strong { color: var(--color-pass); font-size: var(--text-base); }
 
 .filter-row {
   display: flex;

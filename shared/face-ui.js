@@ -84,23 +84,48 @@ export function createOverlayCanvas(videoEl, parent) {
   return canvas;
 }
 
+// 每張臉的「顯示進度」做 ease — 即使實際採樣只花 0.3 秒，
+// 視覺上動畫至少跑 1.5 秒讓使用者看得到「轉一圈」。
+const _progressDisplay = new Map(); // faceId -> { pct, lastUpdate }
+const _progressFillSec = 1.5;
+
+function _easeProgress(faceId, targetPct, now) {
+  let state = _progressDisplay.get(faceId);
+  if (!state) {
+    state = { pct: 0, lastUpdate: now };
+    _progressDisplay.set(faceId, state);
+  }
+  const dt = (now - state.lastUpdate) / 1000;
+  state.lastUpdate = now;
+  const rate = 1 / _progressFillSec;
+  const diff = targetPct - state.pct;
+  if (Math.abs(diff) < 0.001) state.pct = targetPct;
+  else state.pct += Math.sign(diff) * Math.min(Math.abs(diff), rate * dt);
+  return Math.max(0, Math.min(1, state.pct));
+}
+
 /**
  * 在 canvas 上畫人臉「圓框」，圓周本身就是進度條：從正上方 12 點鐘
- * 方向順時針繞一圈，圓周閉合 = 採樣完成。
+ * 方向順時針繞一圈，圓周閉合 = 採樣完成。實際採樣速度雖快，但顯示
+ * 用 ease（1.5 秒滿格），讓使用者看到「轉圈」過程。
  * faceData: Array<{ faceId, box, framesCollected, targetFrames, done }>
  */
 export function drawFaceBoxes(canvas, faceData) {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const now = Date.now();
+  const seen = new Set();
   for (const f of faceData || []) {
     if (!f.box) continue;
     const [x, y, w, h] = f.box;
+    seen.add(f.faceId);
     const cx = x + w / 2;
     const cy = y + h / 2;
     // 半徑：取臉框較短那邊的一半（剛好內切於臉，不會撐到背景）
     const radius = Math.min(w, h) / 2;
-    const pct = f.done ? 1 : (f.targetFrames > 0 ? Math.min(1, f.framesCollected / f.targetFrames) : 0);
+    const targetPct = f.done ? 1 : (f.targetFrames > 0 ? Math.min(1, f.framesCollected / f.targetFrames) : 0);
+    const pct = _easeProgress(f.faceId, targetPct, now);
 
     // 1. 底層淡灰整圈（讓使用者看到圓在哪裡）
     ctx.strokeStyle = 'rgba(138, 140, 152, 0.6)';
@@ -121,13 +146,17 @@ export function drawFaceBoxes(canvas, faceData) {
       ctx.stroke();
     }
 
-    // 3. 完成標記（圓內偏右上、放大）
-    if (f.done) {
+    // 3. 完成標記（顯示進度也滿了才顯示）
+    if (f.done && pct >= 0.99) {
       ctx.fillStyle = '#1e8050';
       ctx.font = 'bold 48px sans-serif';
       ctx.textBaseline = 'middle';
       ctx.fillText('✓', cx + radius * 0.45, cy - radius * 0.45);
     }
+  }
+  // 清掉看不見的 face 的 ease state
+  for (const id of [..._progressDisplay.keys()]) {
+    if (!seen.has(id)) _progressDisplay.delete(id);
   }
 }
 
