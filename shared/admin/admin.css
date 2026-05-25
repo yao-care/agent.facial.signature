@@ -171,6 +171,14 @@ table.admin-table {
   text-align: right;
   font-weight: 600;
 }
+.tuning-row-readonly { background: var(--bg-overlay); }
+.tuning-readonly-value {
+  padding: 8px 12px;
+  font-size: var(--text-base);
+  font-weight: 600;
+  text-align: right;
+  color: var(--text-secondary);
+}
 
 /* 儲存按鈕全寬 sticky */
 .tuning-save {

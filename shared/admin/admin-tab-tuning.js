@@ -31,9 +31,9 @@ const TUNING_GROUPS = [
   },
   {
     title: '系統',
-    hint: '資料庫版本（僅供升級對照，請勿手動修改）。',
+    hint: '資料庫版本（升級時自動處理，無法手動修改）。',
     fields: [
-      { key: 'schemaVersion', label: '資料庫版本' },
+      { key: 'schemaVersion', label: '資料庫版本', readonly: true },
     ],
   },
 ];
@@ -45,12 +45,21 @@ export async function mountTuningTab(root, db) {
       <h3>${escape(g.title)}</h3>
       <p class="hint">${escape(g.hint)}</p>
       <div class="tuning-fields">
-        ${g.fields.map(f => `
-          <label class="tuning-row">
-            <span class="tuning-label">${escape(f.label)}</span>
-            <input data-key="${escape(f.key)}" type="number" step="any" value="${tuning[f.key] ?? ''}">
-          </label>
-        `).join('')}
+        ${g.fields.map(f => {
+          const val = tuning[f.key] ?? '';
+          if (f.readonly) {
+            return `
+              <div class="tuning-row tuning-row-readonly">
+                <span class="tuning-label">${escape(f.label)}</span>
+                <span class="tuning-readonly-value">${escape(val)}</span>
+              </div>`;
+          }
+          return `
+            <label class="tuning-row">
+              <span class="tuning-label">${escape(f.label)}</span>
+              <input data-key="${escape(f.key)}" type="number" step="any" value="${val}">
+            </label>`;
+        }).join('')}
       </div>
     </section>
   `).join('');
