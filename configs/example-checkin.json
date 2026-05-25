@@ -10,17 +10,7 @@
     "message": "本系統將擷取您的人臉特徵以進行簽到，資料留在本機。是否同意？",
     "requireExplicitConsent": true
   },
-  "extraFields": [
-    {
-      "key": "companions",
-      "label": "陪同家屬",
-      "type": "multi-text",
-      "placeholder": "輸入家屬姓名",
-      "scope": "event",
-      "collectOn": "every",
-      "required": false
-    }
-  ],
+  "extraFields": [],
   "tts": {
     "enabled": true,
     "templateNamed": "{name} {greeting}"

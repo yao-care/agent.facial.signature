@@ -192,6 +192,93 @@ table.admin-table {
   font-size: var(--text-sm);
 }
 
+/* 系統工具：兩欄排版 */
+.system-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+.system-col {
+  background: var(--bg-surface);
+  padding: 24px;
+  border-radius: 12px;
+}
+.system-col h2:first-child { margin-top: 0; }
+.storage-actions { display: flex; gap: 12px; align-items: center; margin: 12px 0 16px; }
+
+/* 相似度測試器：兩人並列 + 照片 */
+.sim-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 12px;
+}
+.sim-side { display: flex; flex-direction: column; gap: 10px; }
+.sim-side select {
+  padding: 10px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-base);
+  font-size: var(--text-base);
+}
+.sim-photo {
+  aspect-ratio: 1 / 1;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.sim-photo img { width: 100%; height: 100%; object-fit: cover; }
+.sim-placeholder { color: var(--text-muted); font-size: var(--text-sm); }
+.sim-caption { padding: 8px; text-align: center; background: var(--bg-base); width: 100%; }
+.sim-caption strong { display: block; }
+.sim-caption small { color: var(--text-muted); }
+.sim-result {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--bg-base);
+  border-radius: 8px;
+  text-align: center;
+  font-size: var(--text-lg);
+  color: var(--text-secondary);
+}
+.sim-score { font-size: var(--text-2xl); font-weight: 700; color: var(--color-pass); }
+.sim-judge { font-size: var(--text-base); color: var(--text-secondary); margin-top: 6px; }
+
+/* 警示名單：成員列表與加入列 */
+.member-list { list-style: none; padding: 0; margin: 12px 0; }
+.member-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-base);
+}
+.member-list li:last-child { border-bottom: none; }
+.add-member-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+.add-member-row select {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-base);
+  font-size: var(--text-base);
+}
+
+@media (max-width: 900px) {
+  .system-grid { grid-template-columns: 1fr; }
+  .sim-grid { grid-template-columns: 1fr 1fr; }
+}
+
 .filter-row {
   display: flex;
   gap: 12px;

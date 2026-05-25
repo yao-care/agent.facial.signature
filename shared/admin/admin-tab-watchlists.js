@@ -90,16 +90,26 @@ export async function mountWatchlistsTab(root, db) {
       const card = document.createElement('div');
       card.className = 'modal';
       card.style.margin = '12px 0';
+      // 候選名單：所有人員減去已在名單上的
+      const candidates = allPeople.filter(p => !wl.personIds.includes(p.id));
+      const candidateOptions = candidates.length === 0
+        ? `<option value="">（所有人員都已在名單上）</option>`
+        : candidates.map(p =>
+            `<option value="${p.id}">${escape(p.displayName || '（未命名 ' + p.id.slice(0, 6) + '）')}</option>`
+          ).join('');
+
       card.innerHTML = `
-        <h3>${escape(wl.name)} <small style="color:#64748b;">（編號 ${escape(wl.id)}）</small>
+        <h3>${escape(wl.name)} <small style="color:var(--text-muted);">（編號 ${escape(wl.id)}）</small>
           <button class="btn btn-danger" data-action="del">刪除名單</button></h3>
         <p>目前共 ${wl.personIds.length} 人</p>
-        <ul>${wl.personIds.map(pid => `
+        <ul class="member-list">${wl.personIds.map(pid => `
           <li>${escape(peopleById.get(pid)?.displayName || '（未命名 ' + pid.slice(0, 6) + '）')}
-            <button class="btn" data-remove="${pid}">移出</button></li>
+            <button class="btn btn-sm" data-remove="${pid}">移出</button></li>
         `).join('')}</ul>
-        <input class="add-input" placeholder="輸入人員編號前綴">
-        <button class="btn" data-action="add">加入此人</button>
+        <div class="add-member-row">
+          <select class="add-select" ${candidates.length === 0 ? 'disabled' : ''}>${candidateOptions}</select>
+          <button class="btn btn-primary" data-action="add" ${candidates.length === 0 ? 'disabled' : ''}>加入此人</button>
+        </div>
       `;
       container.appendChild(card);
       card.querySelector('[data-action=del]').addEventListener('click', async () => {
@@ -108,11 +118,12 @@ export async function mountWatchlistsTab(root, db) {
         render();
       });
       card.querySelector('[data-action=add]').addEventListener('click', async () => {
-        const prefix = card.querySelector('.add-input').value.trim();
-        const target = allPeople.find(p => p.id.startsWith(prefix));
-        if (!target) { showToast(null, '找不到該人員', 'error'); return; }
-        await store.addToWatchlist(db, wl.id, target.id);
-        showToast(null, `已加入「${target.displayName || target.id.slice(0, 8)}」`, 'success');
+        const select = card.querySelector('.add-select');
+        const targetId = select.value;
+        if (!targetId) return;
+        const target = allPeople.find(p => p.id === targetId);
+        await store.addToWatchlist(db, wl.id, targetId);
+        showToast(null, `已加入「${target?.displayName || targetId.slice(0, 8)}」`, 'success');
         render();
       });
       card.querySelectorAll('[data-remove]').forEach(btn => {
