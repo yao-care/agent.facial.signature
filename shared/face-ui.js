@@ -80,7 +80,8 @@ export function createOverlayCanvas(videoEl, parent) {
 }
 
 /**
- * 在 canvas 上畫人臉框 + 進度條。
+ * 在 canvas 上畫人臉框，框本身就是進度條 —— 從左上順時針繞一圈，
+ * 滿一圈即「採樣完成」。
  * faceData: Array<{ faceId, box, framesCollected, targetFrames, done }>
  */
 export function drawFaceBoxes(canvas, faceData) {
@@ -90,28 +91,51 @@ export function drawFaceBoxes(canvas, faceData) {
   for (const f of faceData || []) {
     if (!f.box) continue;
     const [x, y, w, h] = f.box;
-    const pct = f.targetFrames > 0 ? Math.min(1, f.framesCollected / f.targetFrames) : 0;
+    const pct = f.done ? 1 : (f.targetFrames > 0 ? Math.min(1, f.framesCollected / f.targetFrames) : 0);
 
-    // 人臉框：done = 綠色 / sampling = 黃綠 / idle = 灰
-    if (f.done) ctx.strokeStyle = '#1e8050';
-    else if (pct > 0) ctx.strokeStyle = '#1e8050';
-    else ctx.strokeStyle = '#8a8c98';
+    // 1. 底色框（淡灰，整圈）— 讓使用者看到框在哪裡
+    ctx.strokeStyle = 'rgba(138, 140, 152, 0.55)';
     ctx.lineWidth = 4;
     ctx.strokeRect(x, y, w, h);
 
-    // 進度條（框上方 10px 寬度與框同）
-    if (pct > 0 || f.done) {
-      const barY = Math.max(0, y - 18);
-      const barH = 10;
-      ctx.fillStyle = 'rgba(220, 224, 230, 0.85)';
-      ctx.fillRect(x, barY, w, barH);
+    // 2. 進度框 — 從左上順時針繞，畫到 pct × 周長 為止
+    if (pct > 0) {
+      const perimeter = 2 * (w + h);
+      let remaining = perimeter * pct;
+
+      ctx.strokeStyle = '#1e8050';
+      ctx.lineWidth = 6;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+
+      // top edge → right edge → bottom edge → left edge（順時針）
+      const topLen = Math.min(w, remaining);
+      ctx.lineTo(x + topLen, y);
+      remaining -= topLen;
+
+      if (remaining > 0) {
+        const rightLen = Math.min(h, remaining);
+        ctx.lineTo(x + w, y + rightLen);
+        remaining -= rightLen;
+      }
+      if (remaining > 0) {
+        const bottomLen = Math.min(w, remaining);
+        ctx.lineTo(x + w - bottomLen, y + h);
+        remaining -= bottomLen;
+      }
+      if (remaining > 0) {
+        const leftLen = Math.min(h, remaining);
+        ctx.lineTo(x, y + h - leftLen);
+      }
+      ctx.stroke();
+    }
+
+    // 3. 完成標記
+    if (f.done) {
       ctx.fillStyle = '#1e8050';
-      ctx.fillRect(x, barY, w * pct, barH);
-      // 進度文字（框右上）
-      ctx.fillStyle = '#1e2030';
-      ctx.font = 'bold 20px sans-serif';
-      const text = f.done ? '✓ 完成' : `${f.framesCollected} / ${f.targetFrames}`;
-      ctx.fillText(text, x + w + 8, barY + barH);
+      ctx.font = 'bold 24px sans-serif';
+      ctx.fillText('✓', x + w - 32, y + 28);
     }
   }
 }

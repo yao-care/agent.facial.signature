@@ -2,6 +2,11 @@ import * as store from '../face-store.js';
 import { showToast } from '../face-ui.js';
 
 export async function mountPeopleTab(root, db, { onViewEvents } = {}) {
+  // 模型版本只在 v1/v2 過渡期才有用；多版本時才顯示 filter
+  const allPeopleForCheck = await store.listPeople(db);
+  const distinctModels = [...new Set(allPeopleForCheck.map(p => p.modelVersion))];
+  const showModelFilter = distinctModels.length > 1;
+
   root.innerHTML = `
     <div class="filter-row">
       <input id="search" placeholder="搜尋姓名 / 備註">
@@ -10,40 +15,51 @@ export async function mountPeopleTab(root, db, { onViewEvents } = {}) {
         <option value="unnamed">僅未命名</option>
         <option value="named">僅有姓名</option>
       </select>
-      <select id="filter-model">
-        <option value="all">所有辨識模型</option>
-      </select>
+      ${showModelFilter ? `
+        <select id="filter-model">
+          <option value="all">所有辨識模型</option>
+          ${distinctModels.map(m => `<option>${escape(m)}</option>`).join('')}
+        </select>
+      ` : ''}
     </div>
     <table class="admin-table">
       <thead><tr>
-        <th>快照</th><th>姓名</th><th>簽到次數</th><th>最後簽到</th><th>辨識模型</th><th>備註</th><th>操作</th>
+        <th>快照</th><th>姓名</th><th>近 3 日簽到（今 / 昨 / 前）</th><th>最後簽到</th><th>備註</th><th>操作</th>
       </tr></thead>
       <tbody id="people-tbody"></tbody>
     </table>
   `;
+
+  function dayStart(offsetDays = 0) {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - offsetDays);
+    return d.getTime();
+  }
+  const today0 = dayStart(0);
+  const tomorrow0 = dayStart(-1);
+  const yesterday0 = dayStart(1);
+  const dayBefore0 = dayStart(2);
 
   async function render() {
     const tbody = root.querySelector('#people-tbody');
     const all = await store.listPeople(db);
     const events = await store.listEvents(db);
     const lastEvent = new Map();
-    const countByPerson = new Map();
+    const dailyByPerson = new Map(); // personId -> { today, yest, prev }
     for (const e of events) {
       if (!e.personId) continue;
       const prev = lastEvent.get(e.personId);
       if (!prev || e.timestamp > prev.timestamp) lastEvent.set(e.personId, e);
-      countByPerson.set(e.personId, (countByPerson.get(e.personId) || 0) + 1);
+      let bucket = dailyByPerson.get(e.personId);
+      if (!bucket) { bucket = { today: 0, yest: 0, prev: 0 }; dailyByPerson.set(e.personId, bucket); }
+      if (e.timestamp >= today0 && e.timestamp < tomorrow0) bucket.today++;
+      else if (e.timestamp >= yesterday0 && e.timestamp < today0) bucket.yest++;
+      else if (e.timestamp >= dayBefore0 && e.timestamp < yesterday0) bucket.prev++;
     }
     const filter = root.querySelector('#filter-named').value;
     const search = root.querySelector('#search').value.trim().toLowerCase();
-
-    // populate model filter
-    const modelSel = root.querySelector('#filter-model');
-    const models = [...new Set(all.map(p => p.modelVersion))];
-    if (modelSel.options.length - 1 !== models.length) {
-      modelSel.innerHTML = `<option value="all">所有辨識模型</option>` + models.map(m => `<option>${escape(m)}</option>`).join('');
-    }
-    const modelFilter = modelSel.value;
+    const modelFilter = root.querySelector('#filter-model')?.value || 'all';
 
     const rows = all
       .filter(p => filter === 'all' || (filter === 'unnamed' ? !p.displayName : !!p.displayName))
@@ -59,14 +75,18 @@ export async function mountPeopleTab(root, db, { onViewEvents } = {}) {
       const last = lastEvent.get(p.id);
       const snapBlob = last?.snapshotId ? await safeReadSnapshot(last.snapshotId) : null;
       const thumb = snapBlob ? `<img class="thumb" src="${URL.createObjectURL(snapBlob)}">` : '—';
-      const count = countByPerson.get(p.id) || 0;
+      const daily = dailyByPerson.get(p.id) || { today: 0, yest: 0, prev: 0 };
+      const dailyCell = `<button class="btn btn-count" data-id="${p.id}" title="點擊查看完整紀錄">
+        <strong style="font-size:24px;color:var(--color-pass);">${daily.today}</strong>
+        <span style="color:var(--text-muted);">/ ${daily.yest} / ${daily.prev}</span>
+      </button>`;
+      const metaPreview = renderMeta(p.meta);
       tr.innerHTML = `
         <td>${thumb}</td>
         <td><input class="name-input" value="${escape(p.displayName || '')}" placeholder="（未命名）"></td>
-        <td><button class="btn btn-count" data-id="${p.id}">${count} 次</button></td>
-        <td>${last ? new Date(last.timestamp).toLocaleString() : '—'}</td>
-        <td>${escape(p.modelVersion)}</td>
-        <td><code>${escape(JSON.stringify(p.meta || {}))}</code></td>
+        <td>${dailyCell}</td>
+        <td>${last ? formatRelative(last.timestamp) : '—'}</td>
+        <td>${metaPreview}</td>
         <td>
           <button class="btn btn-save" data-id="${p.id}">儲存</button>
           <button class="btn btn-merge" data-id="${p.id}">合併到…</button>
@@ -145,7 +165,7 @@ export async function mountPeopleTab(root, db, { onViewEvents } = {}) {
 
   root.querySelector('#search').addEventListener('input', render);
   root.querySelector('#filter-named').addEventListener('change', render);
-  root.querySelector('#filter-model').addEventListener('change', render);
+  root.querySelector('#filter-model')?.addEventListener('change', render);
 
   await render();
 }
@@ -156,4 +176,26 @@ async function safeReadSnapshot(id) {
 
 function escape(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+function renderMeta(meta) {
+  if (!meta || typeof meta !== 'object') return '<span style="color:var(--text-muted);">—</span>';
+  const keys = Object.keys(meta);
+  if (keys.length === 0) return '<span style="color:var(--text-muted);">—</span>';
+  return keys.map(k => {
+    const v = meta[k];
+    const display = Array.isArray(v) ? v.join('、') : (v == null ? '' : String(v));
+    return `<div><strong>${escape(k)}：</strong>${escape(display)}</div>`;
+  }).join('');
+}
+
+function formatRelative(ts) {
+  const now = Date.now();
+  const diff = now - ts;
+  const min = 60_000, hr = 60 * min, day = 24 * hr;
+  if (diff < min) return '剛剛';
+  if (diff < hr) return `${Math.floor(diff / min)} 分鐘前`;
+  if (diff < day) return `${Math.floor(diff / hr)} 小時前`;
+  if (diff < 7 * day) return `${Math.floor(diff / day)} 天前`;
+  return new Date(ts).toLocaleDateString();
 }
