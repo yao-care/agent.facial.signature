@@ -1,7 +1,7 @@
 // service-worker.js — cache app shell + Human models + vendor
 // All paths are relative to the SW location so the app works
 // regardless of deployment subpath (root, GH Pages, or internal nested).
-const VERSION = 'v22';
+const VERSION = 'v23';
 const CACHE_APP = `app-shell-${VERSION}`;
 const CACHE_MODELS = `human-models-${VERSION}`;
 
@@ -19,6 +19,8 @@ const APP_SHELL = [
   './shared/face-store-people.js',
   './shared/face-store-events.js',
   './shared/face-store-watchlists.js',
+  './shared/face-store-config.js',
+  './shared/report-aggregate.js',
   './shared/face-store-opfs.js',
   './shared/face-store-accumulate.js',
   './shared/face-store-match.js',
@@ -44,6 +46,8 @@ const APP_SHELL = [
   './shared/admin/admin-tab-people.js',
   './shared/admin/admin-tab-events.js',
   './shared/admin/admin-tab-watchlists.js',
+  './shared/admin/admin-tab-config.js',
+  './shared/admin/admin-tab-report.js',
   './shared/admin/admin-tab-tuning.js',
   './shared/admin/admin-tab-system.js',
   './shared/admin/admin.css',

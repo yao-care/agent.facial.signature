@@ -14,5 +14,13 @@
   "tts": {
     "enabled": true,
     "templateNamed": "{name} {greeting}"
+  },
+  "serviceRecord": {
+    "服務項目": "健康促進",
+    "時段": "上午",
+    "活動編號": "",
+    "活動主題": "示範活動",
+    "餐飲類型": "",
+    "服務志工": ""
   }
 }
