@@ -66,4 +66,12 @@ describe('aggregateServiceRecords', () => {
     expect(B_TABLE_COLUMNS.length).toBe(18);
     expect(B_TABLE_COLUMNS[0]).toBe('流水號');
   });
+
+  it('personId 不在 peopleById → 姓名/個案編號留空', () => {
+    const rows = aggregateServiceRecords([ev('p_unknown', day(9), '上午')], people);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].姓名).toBe('');
+    expect(rows[0].個案編號).toBe('');
+    expect(rows[0].流水號).toBe(1);
+  });
 });

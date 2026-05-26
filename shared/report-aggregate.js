@@ -30,6 +30,7 @@ function dateKey(ts) {
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 }
 
+// opts: { dateFrom, dateTo, scenarioId }。dateFrom/dateTo 為「含端點」的 epoch-ms 上下界。
 export function aggregateServiceRecords(events, peopleById, opts = {}) {
   const { dateFrom = null, dateTo = null, scenarioId = null } = opts;
 
@@ -42,9 +43,10 @@ export function aggregateServiceRecords(events, peopleById, opts = {}) {
 
   const groups = new Map();
   for (const e of checkins) {
+    // 同組（同人/同日/同情境/同時段）的 serviceRecord 視為一致，取首筆即可（spec §5.2 假設）
     const sr = (e.meta && e.meta.serviceRecord) || {};
     const seg = sr.時段 || '';
-    const key = `${e.personId}|${dateKey(e.timestamp)}|${e.scenario}|${seg}`;
+    const key = `${e.personId}\x00${dateKey(e.timestamp)}\x00${e.scenario}\x00${seg}`;
     let g = groups.get(key);
     if (!g) { g = { events: [], sr }; groups.set(key, g); }
     g.events.push(e);
