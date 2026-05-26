@@ -1,4 +1,312 @@
-@import url('../tokens.css');
+/* app.css — 全站唯一樣式表。合併自 tokens(變數+基礎) + face-ui(相機頁) + admin。 */
+
+/* design-tokens.css — OKLCH light theme，依照 design-tokens skill */
+
+:root {
+  /* 背景 */
+  --bg-base: oklch(0.97 0.005 250);
+  --bg-surface: oklch(0.94 0.005 250);
+  --bg-overlay: oklch(0.90 0.008 250);
+  --bg-hover: oklch(0.92 0.005 250);
+
+  /* 文字 */
+  --text-primary: oklch(0.20 0.01 250);
+  --text-secondary: oklch(0.45 0.01 250);
+  --text-muted: oklch(0.60 0.008 250);
+
+  /* 語意 */
+  --color-pass: oklch(0.48 0.16 150);
+  --color-critical: oklch(0.55 0.22 25);
+  --color-warn: oklch(0.52 0.14 80);
+  --color-info: oklch(0.52 0.13 240);
+  --color-link: oklch(0.48 0.15 250);
+
+  /* Badge 背景 */
+  --badge-bg-warn: oklch(0.92 0.04 80);
+  --badge-bg-info: oklch(0.92 0.03 240);
+  --badge-bg-pass: oklch(0.92 0.04 150);
+
+  /* 邊框 */
+  --border-subtle: oklch(0.85 0.005 250);
+
+  /* 字級（用 px 避免 rem 在 html / body 連鎖放大） */
+  --text-xs: 18px;   /* 徽章 / 標籤 / 最小字 */
+  --text-sm: 20px;   /* 表格內文 */
+  --text-base: 24px; /* 正文預設 */
+  --text-lg: 28px;   /* 強調 */
+  --text-xl: 32px;   /* 區段標題 */
+  --text-2xl: 48px;  /* 摘要數字 */
+  --text-3xl: 56px;  /* 主標 */
+}
+
+/* 舊瀏覽器 fallback — 用 hex */
+@supports not (color: oklch(0 0 0)) {
+  :root {
+    --bg-base: #f5f6f8;
+    --bg-surface: #ecedf0;
+    --bg-overlay: #dfe0e5;
+    --bg-hover: #e5e6ea;
+    --text-primary: #1e2030;
+    --text-secondary: #5e6070;
+    --text-muted: #8a8c98;
+    --color-pass: #1e8050;
+    --color-critical: #c93135;
+    --color-warn: #8a7020;
+    --color-info: #2a6bb8;
+    --color-link: #1e5ab8;
+    --badge-bg-warn: #fcf5e8;
+    --badge-bg-info: #e8f0fc;
+    --badge-bg-pass: #e8fcef;
+    --border-subtle: #d5d6da;
+  }
+}
+
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: var(--text-base);
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: var(--bg-base);
+}
+
+h1 { font-size: var(--text-3xl); font-weight: 700; }
+h2 { font-size: var(--text-xl); font-weight: 700; margin: 24px 0 12px; }
+h3 { font-size: var(--text-lg); font-weight: 700; margin: 16px 0 8px; }
+
+button, input, select, textarea {
+  font-size: var(--text-base);
+  font-family: inherit;
+}
+
+small { font-size: var(--text-xs); color: var(--text-muted); }
+code { font-size: var(--text-sm); background: var(--bg-overlay); padding: 2px 6px; border-radius: 4px; }
+
+.hint { color: var(--text-secondary); font-size: var(--text-sm); margin: 4px 0 12px; }
+
+/* 標籤+欄位橫列 — 相機頁補充/同意 dialog、admin 情境設定/連結欄位共用 */
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+}
+.field-row[hidden] { display: none; } /* display:flex 會蓋過 [hidden] 預設，須還原 */
+.field-row label {
+  flex: 0 0 7em;
+  font-size: var(--text-base);
+}
+.field-row input[type=text],
+.field-row select {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  font-size: var(--text-base);
+}
+
+/* ============ 相機頁元件（原 face-ui.css）============ */
+
+.face-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+/* Modals */
+.audio-unlock-overlay, .consent-overlay, .fields-overlay, .alert-popup {
+  position: fixed;
+  inset: 0;
+  background: oklch(0.20 0.01 250 / 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+.audio-unlock-card, .consent-card, .fields-card, .alert-card {
+  background: var(--bg-base);
+  padding: 32px;
+  border-radius: 16px;
+  max-width: 560px;
+  width: 100%;
+  box-shadow: 0 16px 48px oklch(0.20 0.01 250 / 0.35);
+}
+.audio-unlock-card h2, .consent-card h2, .fields-card h2 {
+  margin: 0 0 12px;
+  color: var(--text-primary);
+}
+.audio-unlock-card p, .consent-card p, .fields-card p {
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+}
+
+/* Buttons inside modals */
+.consent-actions, .fields-actions, .audio-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.btn-modal {
+  padding: 14px 28px;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+.btn-modal-primary {
+  background: var(--color-pass);
+  color: white;
+  border-color: var(--color-pass);
+}
+.btn-modal-primary:disabled {
+  background: var(--text-muted);
+  border-color: var(--text-muted);
+  cursor: not-allowed;
+}
+.btn-modal-secondary {
+  background: var(--bg-surface);
+}
+.btn-modal-cancel {
+  background: transparent;
+}
+
+
+/* Multi-text field (companion list) */
+.multi-text-row {
+  margin: 8px 0;
+}
+.multi-text-row > label {
+  display: block;
+  font-size: var(--text-base);
+  margin-bottom: 6px;
+}
+.multi-text-list { display: flex; flex-direction: column; gap: 6px; }
+.multi-text-item {
+  display: flex;
+  gap: 8px;
+}
+.multi-text-item input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  font-size: var(--text-base);
+}
+.multi-text-add, .multi-text-remove {
+  padding: 8px 14px;
+  border: 1px dashed var(--border-subtle);
+  background: transparent;
+  color: var(--color-link);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: var(--text-sm);
+}
+.multi-text-remove { color: var(--color-critical); }
+.multi-text-add { margin-top: 8px; align-self: flex-start; }
+
+/* Result card */
+.result-card {
+  position: fixed;
+  top: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-base);
+  padding: 20px 36px;
+  border-radius: 24px;
+  box-shadow: 0 8px 24px oklch(0.20 0.01 250 / 0.25);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 100;
+  animation: result-pop 0.3s ease-out;
+  border-left: 8px solid var(--color-pass);
+}
+.result-icon {
+  font-size: var(--text-2xl);
+  color: var(--color-pass);
+  line-height: 1;
+}
+.result-text {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.result-badge {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  background: var(--badge-bg-info);
+  color: var(--color-info);
+}
+.result-retry {
+  background: var(--badge-bg-warn);
+  color: var(--color-warn);
+  border-left-color: var(--color-warn);
+}
+.alert-card h2 {
+  color: var(--color-critical);
+  font-size: var(--text-xl);
+}
+@keyframes result-pop {
+  from { transform: translate(-50%, -100%); opacity: 0; }
+}
+
+/* result-card 的 tone — 命中警示名單時整張卡上色 */
+.result-card.tone-critical {
+  background: oklch(0.92 0.06 25);
+  border-left-color: var(--color-critical);
+  animation: result-pop 0.3s ease-out, urgent-pulse 1s ease-in-out 0.3s 3;
+}
+.result-card.tone-critical .result-icon { color: var(--color-critical); }
+.result-card.tone-critical .result-badge { background: var(--color-critical); color: white; }
+.result-card.tone-warn {
+  background: var(--badge-bg-warn);
+  border-left-color: var(--color-warn);
+}
+.result-card.tone-warn .result-icon { color: var(--color-warn); }
+.result-card.tone-warn .result-badge { background: var(--color-warn); color: white; }
+.result-card.tone-info { border-left-color: var(--color-info); }
+.result-card.tone-info .result-icon { color: var(--color-info); }
+.result-card.tone-info .result-badge { background: var(--color-info); color: white; }
+.result-card.tone-pass .result-badge { background: var(--color-pass); color: white; }
+.result-card.tone-purple {
+  border-left-color: oklch(0.50 0.17 300);
+}
+.result-card.tone-purple .result-icon { color: oklch(0.50 0.17 300); }
+.result-card.tone-purple .result-badge {
+  background: oklch(0.50 0.17 300); color: white;
+}
+.result-card.tone-pink {
+  border-left-color: oklch(0.52 0.17 340);
+}
+.result-card.tone-pink .result-badge {
+  background: oklch(0.52 0.17 340); color: white;
+}
+
+@keyframes urgent-pulse {
+  0%, 100% { box-shadow: 0 8px 24px oklch(0.20 0.01 250 / 0.25); }
+  50% { box-shadow: 0 0 0 8px oklch(0.55 0.22 25 / 0.4), 0 8px 24px oklch(0.20 0.01 250 / 0.25); }
+}
+
+/* Generic error/readonly text */
+.error, .readonly {
+  padding: 40px 24px;
+  text-align: center;
+  font-size: var(--text-lg);
+}
+.error { color: var(--color-critical); }
+.readonly { color: var(--text-secondary); }
+
+/* ============ Admin 元件（原 admin.css）============ */
 
 body { margin: 0; background: var(--bg-base); color: var(--text-primary); }
 
@@ -163,7 +471,6 @@ table.admin-table {
   font-size: var(--text-base);
 }
 .identity-block .hint { margin: 8px 0 0; font-size: var(--text-xs); }
-/* .field-row 定義在 tokens.css（admin.css 也 @import tokens.css），不在此重複 */
 
 /* 人員 tab 姓名旁的身份徽章 */
 .identity-badge {

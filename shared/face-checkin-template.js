@@ -35,9 +35,8 @@ async function runCheckinInner(config, rootEl) {
   // 3. Persistent storage 請求（允許但非強制）
   await requestPersistentStorage();
 
-  // 4. UI 骨架（含樣式、標題、視訊容器）
+  // 4. UI 骨架（標題、視訊容器）；樣式由頁面 head 的 app.css 提供
   rootEl.innerHTML = `
-    <link rel="stylesheet" href="./shared/face-ui.css">
     <header><h1>${escape(config.scenarioName)}</h1></header>
     <div class="cam-container" style="position:relative;">
       <video id="cam" autoplay playsinline muted></video>

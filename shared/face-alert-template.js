@@ -28,7 +28,6 @@ async function runAlertInner(config, rootEl) {
   await requestPersistentStorage();
 
   rootEl.innerHTML = `
-    <link rel="stylesheet" href="./shared/face-ui.css">
     <header><h1>${escape(config.scenarioName)}</h1></header>
     <div class="cam-container" style="position:relative;">
       <video id="cam" autoplay playsinline muted></video>
