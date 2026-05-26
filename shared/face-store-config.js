@@ -10,7 +10,7 @@ export async function putScenarioConfig(db, scenarioId, serviceRecord) {
   const rec = {
     id: KEY_PREFIX + scenarioId,
     scenarioId,
-    serviceRecord: serviceRecord || {},
+    serviceRecord: serviceRecord ?? {},
     updatedAt: Date.now(),
   };
   await db.put('settings', rec);
@@ -18,6 +18,7 @@ export async function putScenarioConfig(db, scenarioId, serviceRecord) {
 }
 
 export async function listScenarioConfigs(db) {
+  // settings store 很小，全表掃可接受
   const all = await db.getAll('settings');
   return all.filter(r => typeof r.id === 'string' && r.id.startsWith(KEY_PREFIX));
 }
