@@ -20,3 +20,4 @@ export { mergePerson, splitPerson, deletePersonCascade } from './face-store-ops.
 export { scanOrphanSnapshots, gcOrphanSnapshots } from './face-store-gc.js';
 export { exportAll } from './face-store-export.js';
 export { importAll } from './face-store-import.js';
+export { getScenarioConfig, putScenarioConfig, listScenarioConfigs } from './face-store-config.js';

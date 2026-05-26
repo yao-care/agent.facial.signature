@@ -1,0 +1,23 @@
+// scenarioConfig — 用 settings store 存可編輯的情境服務紀錄欄位
+// id 格式：scenarioConfig:<scenarioId>，與 tuning（id='tuning'）共用 store 但前綴隔離
+const KEY_PREFIX = 'scenarioConfig:';
+
+export async function getScenarioConfig(db, scenarioId) {
+  return db.get('settings', KEY_PREFIX + scenarioId);
+}
+
+export async function putScenarioConfig(db, scenarioId, serviceRecord) {
+  const rec = {
+    id: KEY_PREFIX + scenarioId,
+    scenarioId,
+    serviceRecord: serviceRecord || {},
+    updatedAt: Date.now(),
+  };
+  await db.put('settings', rec);
+  return rec;
+}
+
+export async function listScenarioConfigs(db) {
+  const all = await db.getAll('settings');
+  return all.filter(r => typeof r.id === 'string' && r.id.startsWith(KEY_PREFIX));
+}
