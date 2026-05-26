@@ -159,7 +159,7 @@ export async function mountPeopleTab(root, db, { onViewEvents } = {}) {
     const meta = p.meta || {};
     const currentIdentity = meta['身份'] || '';
     // 排除身份這個 key 從一般 key-value rows（會單獨用下拉處理）
-    const otherEntries = Object.entries(meta).filter(([k]) => k !== '身份');
+    const otherEntries = Object.entries(meta).filter(([k]) => !['身份', '個案編號', '平台個案ID'].includes(k));
     overlay.innerHTML = `
       <div class="modal meta-modal">
         <h2>編輯「${escape(p.displayName || '未命名')}」的備註</h2>
@@ -172,6 +172,19 @@ export async function mountPeopleTab(root, db, { onViewEvents } = {}) {
             ).join('')}
           </select>
           <p class="hint">識別到時會用此身份的顏色標記。危險類型（高風險走失、失智長者、黑名單）請在「警示名單」tab 設定，那裡會觸發警示音效。</p>
+        </div>
+
+        <div class="identity-block">
+          <label class="identity-label">社會局連結欄位</label>
+          <div class="field-row">
+            <label>個案編號</label>
+            <input type="text" class="link-case-no" value="${escape(meta['個案編號'] || '')}" placeholder="自編，例 A001">
+          </div>
+          <div class="field-row">
+            <label>平台個案 ID</label>
+            <input type="text" class="link-platform-id" value="${escape(meta['平台個案ID'] || '')}" placeholder="平台建檔後抄回">
+          </div>
+          <p class="hint">個案編號是 B 表對應社會局個案的 key，建議務必填寫。</p>
         </div>
 
         <h3 style="margin-top:24px;">其他備註</h3>
@@ -208,11 +221,15 @@ export async function mountPeopleTab(root, db, { onViewEvents } = {}) {
       // 身份單獨從下拉抓
       const identity = overlay.querySelector('#identity-select').value;
       if (identity) next['身份'] = identity;
+      const caseNo = overlay.querySelector('.link-case-no').value.trim();
+      const platformId = overlay.querySelector('.link-platform-id').value.trim();
+      if (caseNo) next['個案編號'] = caseNo;
+      if (platformId) next['平台個案ID'] = platformId;
       // 其他 key-value rows
       rowsEl.querySelectorAll('.meta-row').forEach(row => {
         const k = row.querySelector('.meta-key').value.trim();
         const v = row.querySelector('.meta-val').value.trim();
-        if (k && k !== '身份') next[k] = v;
+        if (k && !['身份', '個案編號', '平台個案ID'].includes(k)) next[k] = v;
       });
       // 直接覆寫（繞過 updatePerson 的 merge），讓刪 key 真的刪掉
       const tx = db.transaction('people', 'readwrite');
