@@ -53,6 +53,14 @@ async function runCheckinInner(config, rootEl) {
 
   // 6. 開啟資料庫 + 設置相機 + overlay canvas
   const db = await store.openFaceDb();
+  // 合併情境服務紀錄：IndexedDB 優先；無記錄則用靜態 JSON 的 serviceRecord seed 一筆
+  let serviceRecord = config.serviceRecord || {};
+  const storedCfg = await store.getScenarioConfig(db, config.scenarioId);
+  if (storedCfg?.serviceRecord) {
+    serviceRecord = storedCfg.serviceRecord;
+  } else if (config.serviceRecord) {
+    await store.putScenarioConfig(db, config.scenarioId, config.serviceRecord);
+  }
   try {
     await ui.setupCamera(video);
   } catch (err) {
@@ -173,6 +181,8 @@ async function runCheckinInner(config, rootEl) {
       // fuzzy 在 meta 中記錄候選者（用於審核）
       eventMeta.candidates = matchResult.candidates;
     }
+    // 戳上當時的服務紀錄情境（B 表用）；複製一份避免日後改 config 污染舊紀錄
+    eventMeta.serviceRecord = { ...serviceRecord };
 
     await store.createEvent(db, {
       personId,
