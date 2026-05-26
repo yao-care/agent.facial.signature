@@ -70,26 +70,7 @@
   background: transparent;
 }
 
-/* Field rows */
-.field-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 8px 0;
-}
-.field-row label {
-  flex: 0 0 120px;
-  font-size: var(--text-base);
-}
-.field-row input[type=text],
-.field-row select {
-  flex: 1;
-  padding: 10px 14px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 8px;
-  background: var(--bg-surface);
-  font-size: var(--text-base);
-}
+/* .field-row 移至 tokens.css（跨頁共用原件，只留一份） */
 
 /* Multi-text field (companion list) */
 .multi-text-row {

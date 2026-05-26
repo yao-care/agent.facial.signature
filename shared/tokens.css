@@ -80,3 +80,27 @@ small { font-size: var(--text-xs); color: var(--text-muted); }
 code { font-size: var(--text-sm); background: var(--bg-overlay); padding: 2px 6px; border-radius: 4px; }
 
 .hint { color: var(--text-secondary); font-size: var(--text-sm); margin: 4px 0 12px; }
+
+/* 標籤+欄位橫列 — 跨頁共用原件（相機頁補充/同意 dialog、admin 情境設定/連結欄位）。
+   tokens.css 為 face-ui.css 與 admin.css 共同 import 的基底，共用 class 只留這一份。 */
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+}
+.field-row[hidden] { display: none; } /* display:flex 會蓋過 [hidden] 預設，須還原 */
+.field-row label {
+  flex: 0 0 7em;
+  font-size: var(--text-base);
+}
+.field-row input[type=text],
+.field-row select {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  font-size: var(--text-base);
+}
