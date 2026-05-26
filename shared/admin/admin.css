@@ -164,6 +164,31 @@ table.admin-table {
 }
 .identity-block .hint { margin: 8px 0 0; font-size: var(--text-xs); }
 
+/* 標籤+欄位橫列（meta editor 連結欄位、情境設定卡片）。
+   face-ui.css 也有同名 class，但 admin 頁只載 admin.css，需在此定義。 */
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+}
+.field-row > label {
+  flex: 0 0 7em;
+  font-size: var(--text-base);
+  color: var(--text-primary);
+}
+.field-row input[type=text],
+.field-row select {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-size: var(--text-base);
+}
+
 /* 人員 tab 姓名旁的身份徽章 */
 .identity-badge {
   display: inline-block;
