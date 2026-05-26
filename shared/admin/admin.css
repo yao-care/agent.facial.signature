@@ -172,6 +172,8 @@ table.admin-table {
   gap: 12px;
   margin: 8px 0;
 }
+/* display:flex 會蓋過 [hidden] 的 display:none，須明確還原 */
+.field-row[hidden] { display: none; }
 .field-row > label {
   flex: 0 0 7em;
   font-size: var(--text-base);
