@@ -57,7 +57,7 @@ export async function mountConfigTab(root, db) {
     const meal = r.服務項目 === '餐飲服務';
     return `
       <div class="sched-rule" data-kind="${kind}">
-        ${kind === 'specific' ? `<div class="field-row"><label>日期</label><input type="date" class="r-date" value="${escape(r.date || '')}"></div>` : ''}
+        ${kind === 'specific' ? `<div class="sched-star">★ 特定日期</div><div class="field-row"><label>日期</label><input type="date" class="r-date" value="${escape(r.date || '')}"></div>` : ''}
         <div class="field-row"><label>時間</label>
           <input type="time" class="r-start" value="${escape(r.start || '')}">
           <input type="time" class="r-end" value="${escape(r.end || '')}">

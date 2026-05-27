@@ -818,4 +818,12 @@ table.admin-table {
   background: var(--bg-base);
 }
 .sched-rule .r-start, .sched-rule .r-end { flex: 0 0 auto; }
+.sched-rule input[type=time], .sched-rule input[type=date] {
+  padding: 10px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  font-size: var(--text-base);
+}
+.sched-star { font-weight: 700; color: var(--color-warn); margin: 4px 0; }
 .sched-future .sched-rule { background: var(--badge-bg-warn); }
