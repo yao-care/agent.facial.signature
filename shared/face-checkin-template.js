@@ -8,6 +8,7 @@ import * as ui from './face-ui.js';
 import { acquireSingleTabLock } from './single-tab-lock.js';
 import { requestPersistentStorage } from './persistent-storage.js';
 import { accumulateVectors } from './face-store.js';
+import { resolveServiceRecord } from './schedule-resolve.js';
 
 export async function runCheckin(config, rootEl) {
   try {
@@ -52,13 +53,18 @@ async function runCheckinInner(config, rootEl) {
 
   // 6. 開啟資料庫 + 設置相機 + overlay canvas
   const db = await store.openFaceDb();
-  // 合併情境服務紀錄：IndexedDB 優先；無記錄則用靜態 JSON 的 serviceRecord seed 一筆
-  let serviceRecord = config.serviceRecord || {};
+  // 載入情境時段排程：IndexedDB 優先；無記錄則用靜態 JSON 的 schedule seed。
+  // 舊資料相容：既有記錄若只有 serviceRecord（無 schedule），視為「全時段套用同一組」。
+  let schedule = null;
+  let legacyServiceRecord = null;
   const storedCfg = await store.getScenarioConfig(db, config.scenarioId);
-  if (storedCfg?.serviceRecord) {
-    serviceRecord = storedCfg.serviceRecord;
-  } else if (config.serviceRecord) {
-    await store.putScenarioConfig(db, config.scenarioId, config.serviceRecord);
+  if (storedCfg?.schedule) {
+    schedule = storedCfg.schedule;
+  } else if (storedCfg?.serviceRecord) {
+    legacyServiceRecord = storedCfg.serviceRecord;
+  } else {
+    schedule = config.schedule || { weekly: [], specific: [] };
+    if (config.schedule) await store.putScenarioConfig(db, config.scenarioId, config.schedule);
   }
   try {
     await ui.setupCamera(video);
@@ -180,8 +186,10 @@ async function runCheckinInner(config, rootEl) {
       // fuzzy 在 meta 中記錄候選者（用於審核）
       eventMeta.candidates = matchResult.candidates;
     }
-    // 戳上當時的服務紀錄情境（B 表用）；複製一份避免日後改 config 污染舊紀錄
-    eventMeta.serviceRecord = { ...serviceRecord };
+    // 戳上報到當下解析出的服務紀錄情境（B 表用）。舊資料則沿用 legacy 單組。
+    eventMeta.serviceRecord = legacyServiceRecord
+      ? { ...legacyServiceRecord }
+      : resolveServiceRecord(schedule, Date.now());
 
     await store.createEvent(db, {
       personId,
