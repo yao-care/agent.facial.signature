@@ -7,13 +7,15 @@ export async function mountReportTab(root, db) {
       <label>起 <input type="date" id="rpt-from"></label>
       <label>迄 <input type="date" id="rpt-to"></label>
       <input id="rpt-scenario" placeholder="情境編號（留空=全部）">
-      <button class="btn btn-primary" id="rpt-run">產生報表</button>
     </div>
     <p class="hint">框選整張表格即可複製貼進社會局平台。<strong style="color:var(--color-critical);">紅底</strong>列代表個案編號未填、貼回平台無法對應，請先到人員 tab 補。</p>
     <div id="rpt-out"></div>
   `;
 
-  root.querySelector('#rpt-run').addEventListener('click', render);
+  // 篩選欄位改動即時更新（不需按鈕）：date 用 change、文字用 input
+  root.querySelector('#rpt-from').addEventListener('change', render);
+  root.querySelector('#rpt-to').addEventListener('change', render);
+  root.querySelector('#rpt-scenario').addEventListener('input', render);
 
   async function render() {
     const events = await store.listEvents(db);

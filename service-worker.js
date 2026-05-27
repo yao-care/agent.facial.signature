@@ -1,7 +1,7 @@
 // service-worker.js — cache app shell + Human models + vendor
 // All paths are relative to the SW location so the app works
 // regardless of deployment subpath (root, GH Pages, or internal nested).
-const VERSION = 'v28';
+const VERSION = 'v29';
 const CACHE_APP = `app-shell-${VERSION}`;
 const CACHE_MODELS = `human-models-${VERSION}`;
 
