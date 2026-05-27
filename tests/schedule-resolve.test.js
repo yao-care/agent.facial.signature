@@ -31,6 +31,14 @@ describe('resolveServiceRecord', () => {
   it('schedule 為 null → {}', () => {
     expect(resolveServiceRecord(null, at(2026,5,27,10,0))).toEqual({});
   });
+  it('特定日期有規則但時間不符 → 回落至星期規則', () => {
+    const s = {
+      weekly: [{ weekday: 6, start: '08:00', end: '10:00', 服務項目: '週六早安', 時段: '上午', 活動編號: '', 活動主題: '', 餐飲類型: '', 服務志工: '' }],
+      specific: [{ date: '2026-05-30', start: '10:00', end: '11:30', 服務項目: '關懷訪視', 時段: '上午', 活動編號: '', 活動主題: '局長視察', 餐飲類型: '', 服務志工: '' }],
+    };
+    // 5/30 是週六；09:00 在星期規則(08:00-10:00)內、但在特定規則(10:00-11:30)外 → 應回落星期
+    expect(resolveServiceRecord(s, at(2026, 5, 30, 9, 0)).服務項目).toBe('週六早安');
+  });
 });
 
 describe('buildScheduleAgenda', () => {
