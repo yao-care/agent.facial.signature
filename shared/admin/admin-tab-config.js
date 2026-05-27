@@ -95,7 +95,8 @@ export async function mountConfigTab(root, db) {
       } else if (t.classList.contains('sched-add-specific')) {
         card.querySelector('.sched-future').insertAdjacentHTML('beforeend', renderRule({}, 'specific'));
       } else if (t.classList.contains('sched-save')) {
-        saveCard(card, scenarioId);
+        t.disabled = true;
+        saveCard(card, scenarioId).finally(() => { t.disabled = false; });
       }
     });
   }
