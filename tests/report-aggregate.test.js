@@ -74,4 +74,14 @@ describe('aggregateServiceRecords', () => {
     expect(rows[0].個案編號).toBe('');
     expect(rows[0].流水號).toBe(1);
   });
+
+  it('每列帶 _key 字串（含 personId）', () => {
+    const rows = aggregateServiceRecords([ev('p1', day(9), '上午')], people);
+    expect(typeof rows[0]._key).toBe('string');
+    expect(rows[0]._key).toContain('p1');
+  });
+  it('不同時段 → _key 不同', () => {
+    const rows = aggregateServiceRecords([ev('p1', day(9), '上午'), ev('p1', day(14), '下午')], people);
+    expect(rows[0]._key).not.toBe(rows[1]._key);
+  });
 });
