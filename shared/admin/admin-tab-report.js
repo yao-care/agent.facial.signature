@@ -7,29 +7,44 @@ export async function mountReportTab(root, db) {
       <label>起 <input type="date" id="rpt-from"></label>
       <label>迄 <input type="date" id="rpt-to"></label>
       <input id="rpt-scenario" placeholder="情境編號（留空=全部）">
+      <label><input type="checkbox" id="rpt-hide-done"> 隱藏已登錄</label>
     </div>
-    <p class="hint">框選整張表格即可複製貼進社會局平台。<strong style="color:var(--color-critical);">紅底</strong>列代表個案編號未填、貼回平台無法對應，請先到人員 tab 補。</p>
+    <p class="hint">框選「流水號」到「備註」整段複製貼進社會局平台。貼好後勾左側「登錄」，該列變灰、是否平台已登錄填 Y。<strong style="color:var(--color-critical);">紅底</strong>列代表個案編號未填，請先到人員 tab 補。</p>
     <div id="rpt-out"></div>
   `;
 
-  // 篩選欄位改動即時更新（不需按鈕）：date 用 change、文字用 input
+  let currentRows = [];
+
   root.querySelector('#rpt-from').addEventListener('change', render);
   root.querySelector('#rpt-to').addEventListener('change', render);
   root.querySelector('#rpt-scenario').addEventListener('input', render);
+  root.querySelector('#rpt-hide-done').addEventListener('change', render);
+  // checkbox 在 #rpt-out 內、每次 render 重建；委派在 #rpt-out（此元素本身不被換掉）
+  root.querySelector('#rpt-out').addEventListener('change', async (e) => {
+    if (!e.target.classList.contains('rpt-done-cb')) return;
+    const row = currentRows[Number(e.target.dataset.idx)];
+    if (!row) return;
+    await store.setRegistered(db, row._key, e.target.checked);
+    render();
+  });
 
   async function render() {
     const events = await store.listEvents(db);
     const people = await store.listPeople(db);
     const peopleById = new Map(people.map(p => [p.id, p]));
+    const registered = await store.getRegisteredKeys(db);
 
     const fromVal = root.querySelector('#rpt-from').value;
     const toVal = root.querySelector('#rpt-to').value;
     const scenario = root.querySelector('#rpt-scenario').value.trim() || null;
-    // date input 為當地日期；迄日含整天 → 用 23:59:59.999
+    const hideDone = root.querySelector('#rpt-hide-done').checked;
     const dateFrom = fromVal ? new Date(fromVal + 'T00:00:00').getTime() : null;
     const dateTo = toVal ? new Date(toVal + 'T23:59:59.999').getTime() : null;
 
-    const rows = aggregateServiceRecords(events, peopleById, { dateFrom, dateTo, scenarioId: scenario });
+    let rows = aggregateServiceRecords(events, peopleById, { dateFrom, dateTo, scenarioId: scenario });
+    if (hideDone) rows = rows.filter(r => !registered.has(r._key));
+    currentRows = rows;
+
     const out = root.querySelector('#rpt-out');
     if (rows.length === 0) {
       out.innerHTML = `<p style="color:var(--text-muted);">此範圍沒有報到紀錄。</p>`;
@@ -37,11 +52,17 @@ export async function mountReportTab(root, db) {
     }
     out.innerHTML = `
       <table class="admin-table report-table">
-        <thead><tr>${B_TABLE_COLUMNS.map(c => `<th>${c}</th>`).join('')}</tr></thead>
-        <tbody>${rows.map(r => `
-          <tr${r['個案編號'] ? '' : ' style="background:var(--badge-bg-warn);"'}>
-            ${B_TABLE_COLUMNS.map(c => `<td>${escape(r[c] ?? '')}</td>`).join('')}
-          </tr>`).join('')}</tbody>
+        <thead><tr><th>登錄</th>${B_TABLE_COLUMNS.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+        <tbody>${rows.map((r, i) => {
+          const done = registered.has(r._key);
+          const trAttr = done
+            ? ' class="report-row-done"'
+            : (r['個案編號'] ? '' : ' style="background:var(--badge-bg-warn);"');
+          const cells = B_TABLE_COLUMNS.map(c =>
+            `<td>${escape(c === '是否平台已登錄' ? (done ? 'Y' : '') : (r[c] ?? ''))}</td>`
+          ).join('');
+          return `<tr${trAttr}><td><input type="checkbox" class="rpt-done-cb" data-idx="${i}" ${done ? 'checked' : ''}></td>${cells}</tr>`;
+        }).join('')}</tbody>
       </table>
     `;
   }
