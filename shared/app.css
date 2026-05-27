@@ -805,3 +805,17 @@ table.admin-table {
 @keyframes toast-in {
   from { transform: translate(-50%, 40px); opacity: 0; }
 }
+
+/* ============ 情境設定排程編輯器 ============ */
+.sched-day { padding: 10px 0; border-top: 1px solid var(--border-subtle); }
+.sched-day-label { font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+.sched-day-label strong { color: var(--color-pass); margin-left: 6px; }
+.sched-rule {
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 8px 0;
+  background: var(--bg-base);
+}
+.sched-rule .r-start, .sched-rule .r-end { flex: 0 0 auto; }
+.sched-future .sched-rule { background: var(--badge-bg-warn); }
