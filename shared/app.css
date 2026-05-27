@@ -827,3 +827,7 @@ table.admin-table {
 }
 .sched-star { font-weight: 700; color: var(--color-warn); margin: 4px 0; }
 .sched-future .sched-rule { background: var(--badge-bg-warn); }
+
+/* 報表已登錄列變灰 */
+.report-row-done td { color: var(--text-muted); background: var(--bg-overlay); }
+.report-row-warn td { background: var(--badge-bg-warn); }

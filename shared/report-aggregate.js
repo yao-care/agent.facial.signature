@@ -48,7 +48,7 @@ export function aggregateServiceRecords(events, peopleById, opts = {}) {
     const seg = sr.時段 || '';
     const key = `${e.personId}\x00${dateKey(e.timestamp)}\x00${e.scenario}\x00${seg}`;
     let g = groups.get(key);
-    if (!g) { g = { events: [], sr }; groups.set(key, g); }
+    if (!g) { g = { events: [], sr, key }; groups.set(key, g); }
     g.events.push(e);
   }
 
@@ -78,6 +78,7 @@ export function aggregateServiceRecords(events, peopleById, opts = {}) {
       服務志工: sr.服務志工 || '',
       備註: person?.meta?.['備註'] || '',
       _minTs: minTs,
+      _key: g.key,
     });
   }
 
