@@ -830,3 +830,4 @@ table.admin-table {
 
 /* 報表已登錄列變灰 */
 .report-row-done td { color: var(--text-muted); background: var(--bg-overlay); }
+.report-row-warn td { background: var(--badge-bg-warn); }

@@ -25,7 +25,7 @@ export async function mountReportTab(root, db) {
     const row = currentRows[Number(e.target.dataset.idx)];
     if (!row) return;
     await store.setRegistered(db, row._key, e.target.checked);
-    render();
+    render().catch(console.error);
   });
 
   async function render() {
@@ -43,6 +43,7 @@ export async function mountReportTab(root, db) {
 
     let rows = aggregateServiceRecords(events, peopleById, { dateFrom, dateTo, scenarioId: scenario });
     if (hideDone) rows = rows.filter(r => !registered.has(r._key));
+    rows.forEach((r, i) => { r.流水號 = i + 1; });
     currentRows = rows;
 
     const out = root.querySelector('#rpt-out');
@@ -55,9 +56,8 @@ export async function mountReportTab(root, db) {
         <thead><tr><th>登錄</th>${B_TABLE_COLUMNS.map(c => `<th>${c}</th>`).join('')}</tr></thead>
         <tbody>${rows.map((r, i) => {
           const done = registered.has(r._key);
-          const trAttr = done
-            ? ' class="report-row-done"'
-            : (r['個案編號'] ? '' : ' style="background:var(--badge-bg-warn);"');
+          const cls = `${done ? 'report-row-done ' : ''}${r['個案編號'] ? '' : 'report-row-warn'}`.trim();
+          const trAttr = cls ? ` class="${cls}"` : '';
           const cells = B_TABLE_COLUMNS.map(c =>
             `<td>${escape(c === '是否平台已登錄' ? (done ? 'Y' : '') : (r[c] ?? ''))}</td>`
           ).join('');
