@@ -27,6 +27,9 @@ export const DEFAULT_TUNING = {
   // 容量
   vectorsPerPersonCap: 30,      // 每人最多累積 30 個向量（足夠多角度）
   snapshotsPerPersonCap: 50,    // 每人最多保留 50 張快照（含 FIFO 汰換）
+  // 保留 / 提醒生命週期（可校準起始值，非法定值）
+  bioRetentionDays: 180,    // 退冊清除：未簽到 ≥ 此天數自動清生物特徵
+  exportReminderDays: 7,    // 超過此天數未匯出備份即告警
   // schema
   schemaVersion: 1,
 };

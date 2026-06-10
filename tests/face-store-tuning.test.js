@@ -31,4 +31,9 @@ describe('tuning', () => {
     ];
     for (const k of required) expect(DEFAULT_TUNING).toHaveProperty(k);
   });
+
+  it('DEFAULT_TUNING 含退冊保留期與匯出提醒參數', () => {
+    expect(DEFAULT_TUNING.bioRetentionDays).toBe(180);
+    expect(DEFAULT_TUNING.exportReminderDays).toBe(7);
+  });
 });
