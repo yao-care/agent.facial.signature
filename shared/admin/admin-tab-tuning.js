@@ -31,8 +31,10 @@ const TUNING_GROUPS = [
   },
   {
     title: '系統',
-    hint: '資料庫版本（升級時自動處理，無法手動修改）。',
+    hint: '退冊保留期、匯出提醒門檻（可調），資料庫版本（自動處理）。',
     fields: [
+      { key: 'bioRetentionDays',   label: '退冊清除：未簽到天數門檻' },
+      { key: 'exportReminderDays', label: '匯出提醒：未匯出天數門檻' },
       { key: 'schemaVersion', label: '資料庫版本', readonly: true },
     ],
   },
