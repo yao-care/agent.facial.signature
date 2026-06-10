@@ -3,7 +3,7 @@ import { openFaceDb, DB_NAME } from '../shared/face-store-schema.js';
 import { createPerson } from '../shared/face-store-people.js';
 import { createEvent } from '../shared/face-store-events.js';
 import { writeSnapshot, listAllSnapshotIds, readSnapshot } from '../shared/face-store-opfs.js';
-import { scanOrphanSnapshots, gcOrphanSnapshots, getMaintenance, setMaintenance, scanInactiveBiometrics } from '../shared/face-store-gc.js';
+import { scanOrphanSnapshots, gcOrphanSnapshots, getMaintenance, setMaintenance, scanInactiveBiometrics, purgeInactiveBiometrics } from '../shared/face-store-gc.js';
 
 beforeEach(() => {
   indexedDB.deleteDatabase(DB_NAME);
@@ -45,6 +45,41 @@ describe('scanInactiveBiometrics', () => {
     const staleRow = eligible.find(e => e.personId === 'stale');
     expect(staleRow.daysInactive).toBe(200);
     expect(staleRow.displayName).toBe('退冊');
+    db.close();
+  });
+});
+
+describe('purgeInactiveBiometrics', () => {
+  const DAY = 86400000;
+  const NOW = 1700000000000;
+  it('清退冊者向量+快照，保留 people/events，寫稽核紀錄', async () => {
+    const db = await openFaceDb();
+    const vec = (a) => new Float32Array(a);
+    await db.put('people', { id:'active', vectors:[vec([1,0,0])], modelVersion:'v1', displayName:'活躍', createdAt:NOW-400*DAY, updatedAt:NOW });
+    await db.put('events', { id:'e1', personId:'active', timestamp:NOW-10*DAY, scenario:'s', snapshotId:'snapA' });
+    await db.put('people', { id:'stale', vectors:[vec([0,1,0]), vec([0,1,1])], modelVersion:'v1', displayName:'退冊', createdAt:NOW-400*DAY, updatedAt:NOW });
+    await db.put('events', { id:'e2', personId:'stale', timestamp:NOW-200*DAY, scenario:'s', snapshotId:'snapB' });
+    await writeSnapshot(new Blob(['a']), 'snapA');
+    await writeSnapshot(new Blob(['b']), 'snapB');
+
+    const res = await purgeInactiveBiometrics(db, { retentionDays: 180, now: NOW });
+
+    expect(res.purgedCount).toBe(1);
+    expect(res.personIds).toEqual(['stale']);
+    // 退冊者向量清空、活躍者不動
+    expect((await db.get('people', 'stale')).vectors).toEqual([]);
+    expect((await db.get('people', 'active')).vectors).toHaveLength(1);
+    // 退冊者快照刪除、活躍者快照保留
+    const snaps = await listAllSnapshotIds();
+    expect(snaps).toContain('snapA');
+    expect(snaps).not.toContain('snapB');
+    // events 與 people 記錄都保留（留統計）
+    expect(await db.getAll('events')).toHaveLength(2);
+    expect(await db.getAll('people')).toHaveLength(2);
+    // 稽核紀錄
+    const m = await getMaintenance(db);
+    expect(m.lastBioPurgeAt).toBe(NOW);
+    expect(m.lastBioPurgeCount).toBe(1);
     db.close();
   });
 });
