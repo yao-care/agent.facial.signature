@@ -153,11 +153,16 @@ export async function mountSystemTab(root, db) {
   // === 備份 / 還原 ===
   root.querySelector('#export-btn').addEventListener('click', async () => {
     const pwd = root.querySelector('#export-pwd').value || undefined;
+    if (!pwd && !confirm('未設密碼會匯出「未加密」的明文備份，內含長者臉部特徵。建議設定密碼。仍要繼續匯出明文嗎？')) {
+      return;
+    }
     const blob = await store.exportAll(db, { password: pwd });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = `facial-signature-backup-${new Date().toISOString().slice(0, 10)}.${pwd ? 'bin' : 'zip'}`;
     a.click();
+    await store.setMaintenance(db, { lastExportAt: Date.now() });
+    await refreshStorageStatus();
   });
   root.querySelector('#import-btn').addEventListener('click', async () => {
     const file = root.querySelector('#import-file').files[0];
