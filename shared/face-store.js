@@ -17,7 +17,7 @@ export { writeSnapshot, readSnapshot, deleteSnapshot, listAllSnapshotIds } from 
 export { accumulateVectors } from './face-store-accumulate.js';
 export { match } from './face-store-match.js';
 export { mergePerson, splitPerson, deletePersonCascade } from './face-store-ops.js';
-export { scanOrphanSnapshots, gcOrphanSnapshots } from './face-store-gc.js';
+export { scanOrphanSnapshots, gcOrphanSnapshots, getMaintenance, setMaintenance } from './face-store-gc.js';
 export { exportAll } from './face-store-export.js';
 export { importAll } from './face-store-import.js';
 export { getScenarioConfig, putScenarioConfig, listScenarioConfigs } from './face-store-config.js';

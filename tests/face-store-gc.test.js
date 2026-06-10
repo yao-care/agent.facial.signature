@@ -3,11 +3,25 @@ import { openFaceDb, DB_NAME } from '../shared/face-store-schema.js';
 import { createPerson } from '../shared/face-store-people.js';
 import { createEvent } from '../shared/face-store-events.js';
 import { writeSnapshot, listAllSnapshotIds, readSnapshot } from '../shared/face-store-opfs.js';
-import { scanOrphanSnapshots, gcOrphanSnapshots } from '../shared/face-store-gc.js';
+import { scanOrphanSnapshots, gcOrphanSnapshots, getMaintenance, setMaintenance } from '../shared/face-store-gc.js';
 
 beforeEach(() => {
   indexedDB.deleteDatabase(DB_NAME);
   navigator.storage._files.clear();
+});
+
+describe('maintenance 設定', () => {
+  it('預設全 null/0，可部分更新', async () => {
+    const db = await openFaceDb();
+    expect(await getMaintenance(db)).toMatchObject({
+      lastExportAt: null, lastBioPurgeAt: null, lastBioPurgeCount: 0,
+    });
+    await setMaintenance(db, { lastExportAt: 123 });
+    const m = await getMaintenance(db);
+    expect(m.lastExportAt).toBe(123);
+    expect(m.lastBioPurgeCount).toBe(0); // 未動到的欄位保留
+    db.close();
+  });
 });
 
 describe('orphan GC', () => {
