@@ -15,6 +15,11 @@ export async function mountSystemTab(root, db) {
           <button class="btn" id="gc-btn">清理孤兒快照</button>
           <span id="gc-status" class="hint"></span>
         </div>
+        <div class="storage-actions" style="margin-top:12px;">
+          <button class="btn" id="bio-purge-btn">立即執行退冊清除</button>
+          <span id="bio-purge-status" class="hint"></span>
+        </div>
+        <p id="bio-purge-preview" class="hint"></p>
 
         <h2>備份 / 還原</h2>
         <p class="hint">資料只存在這台裝置的瀏覽器內，請定期匯出備份。</p>
@@ -86,6 +91,27 @@ export async function mountSystemTab(root, db) {
     root.querySelector('#gc-status').textContent = `已清理 ${n} 個孤兒快照`;
     await refreshStorageStatus();
   });
+
+  // === 退冊生物特徵清除 ===
+  async function refreshBioPurge() {
+    const tuning = await store.getTuning(db);
+    const maint = await store.getMaintenance(db);
+    const eligible = await store.scanInactiveBiometrics(db, { retentionDays: tuning.bioRetentionDays });
+    root.querySelector('#bio-purge-status').textContent = maint.lastBioPurgeAt
+      ? `上次退冊清除：${new Date(maint.lastBioPurgeAt).toISOString().slice(0, 10)}（${maint.lastBioPurgeCount} 筆）`
+      : '上次退冊清除：尚未執行';
+    root.querySelector('#bio-purge-preview').textContent = eligible.length
+      ? `符合清除（≥${tuning.bioRetentionDays} 天未簽到，將清向量+快照保留統計）：${eligible.map(e => `${e.displayName || e.personId}（${e.daysInactive}天）`).join('、')}`
+      : '目前無符合退冊清除的人員';
+  }
+  root.querySelector('#bio-purge-btn').addEventListener('click', async () => {
+    const tuning = await store.getTuning(db);
+    const { purgedCount } = await store.purgeInactiveBiometrics(db, { retentionDays: tuning.bioRetentionDays });
+    showToast(null, purgedCount ? `已清除 ${purgedCount} 位退冊長者的生物特徵` : '無符合退冊清除的人員', 'success');
+    await refreshBioPurge();
+    await refreshStorageStatus();
+  });
+  await refreshBioPurge();
 
   // === 相似度測試器 ===
   const all = await store.listPeople(db);
