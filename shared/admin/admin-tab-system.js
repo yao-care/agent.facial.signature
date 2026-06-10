@@ -107,7 +107,11 @@ export async function mountSystemTab(root, db) {
   root.querySelector('#bio-purge-btn').addEventListener('click', async () => {
     const tuning = await store.getTuning(db);
     const { purgedCount } = await store.purgeInactiveBiometrics(db, { retentionDays: tuning.bioRetentionDays });
-    showToast(null, purgedCount ? `已清除 ${purgedCount} 位退冊長者的生物特徵` : '無符合退冊清除的人員', 'success');
+    if (purgedCount) {
+      showToast(null, `已清除 ${purgedCount} 位退冊長者的生物特徵`, 'success');
+    } else {
+      showToast(null, '目前無符合退冊清除的人員', 'info');
+    }
     await refreshBioPurge();
     await refreshStorageStatus();
   });
