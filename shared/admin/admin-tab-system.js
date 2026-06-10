@@ -56,12 +56,23 @@ export async function mountSystemTab(root, db) {
   async function refreshStorageStatus() {
     const persisted = await isPersisted();
     const est = await getStorageEstimate();
+    const maint = await store.getMaintenance(db);
+    const tuning = await store.getTuning(db);
+    let exportLine;
+    if (!maint.lastExportAt) {
+      exportLine = `<p style="color:var(--color-critical);">尚未匯出備份</p>`;
+    } else {
+      const days = Math.floor((Date.now() - maint.lastExportAt) / 86400000);
+      const warn = days > tuning.exportReminderDays;
+      exportLine = `<p${warn ? ' style="color:var(--color-critical);"' : ''}>距上次匯出備份：${days} 天${warn ? '（建議盡快匯出）' : ''}</p>`;
+    }
     root.querySelector('#storage-status').innerHTML = `
       <p>持久儲存：${persisted
         ? '<strong style="color:var(--color-pass);">✓ 已授權</strong>（瀏覽器不會自動清資料）'
         : '<strong style="color:var(--color-critical);">✗ 未授權</strong>（瀏覽器可能在空間不足時清資料） <button class="btn btn-sm" id="req-persist">請求授權</button>'
       }</p>
       <p>用量：${est ? `${Math.round(est.usage / 1024 / 1024)} MB / ${Math.round(est.quota / 1024 / 1024)} MB` : '無法取得'}</p>
+      ${exportLine}
     `;
     root.querySelector('#req-persist')?.addEventListener('click', async () => {
       await requestPersistentStorage();
