@@ -58,7 +58,9 @@ export async function purgeInactiveBiometrics(db, { retentionDays, now = Date.no
       await deleteSnapshot(sid);
     }
   }
-  await setMaintenance(db, { lastBioPurgeAt: now, lastBioPurgeCount: eligible.length });
+  if (eligible.length > 0) {
+    await setMaintenance(db, { lastBioPurgeAt: now, lastBioPurgeCount: eligible.length });
+  }
   return { purgedCount: eligible.length, personIds: eligible.map((e) => e.personId) };
 }
 

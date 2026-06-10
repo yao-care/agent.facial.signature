@@ -62,6 +62,19 @@ describe('scanInactiveBiometrics', () => {
 describe('purgeInactiveBiometrics', () => {
   const DAY = 86400000;
   const NOW = 1700000000000;
+  it('0 筆符合時不覆蓋既有稽核紀錄', async () => {
+    const db = await openFaceDb();
+    // 預先寫入一筆「昨天清了 5 筆」的稽核
+    await setMaintenance(db, { lastBioPurgeAt: 111, lastBioPurgeCount: 5 });
+    // 無任何符合退冊者(空庫)
+    const res = await purgeInactiveBiometrics(db, { retentionDays: 180, now: 1700000000000 });
+    expect(res.purgedCount).toBe(0);
+    const m = await getMaintenance(db);
+    expect(m.lastBioPurgeAt).toBe(111);   // 未被覆蓋
+    expect(m.lastBioPurgeCount).toBe(5);  // 未被覆蓋
+    db.close();
+  });
+
   it('清退冊者向量+快照，保留 people/events，寫稽核紀錄', async () => {
     const db = await openFaceDb();
     const vec = (a) => new Float32Array(a);
