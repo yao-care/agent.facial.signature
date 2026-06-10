@@ -13,6 +13,28 @@ export async function gcOrphanSnapshots(db) {
   return orphans.length;
 }
 
+export async function scanInactiveBiometrics(db, { retentionDays, now = Date.now() }) {
+  const people = await db.getAll('people');
+  const events = await db.getAll('events');
+  const lastActivity = {};
+  for (const e of events) {
+    if (!e.personId) continue;
+    if (lastActivity[e.personId] === undefined || e.timestamp > lastActivity[e.personId]) {
+      lastActivity[e.personId] = e.timestamp;
+    }
+  }
+  const cutoff = retentionDays * 86400000;
+  const result = [];
+  for (const p of people) {
+    if (!p.vectors || p.vectors.length === 0) continue; // 已無生物特徵
+    const last = lastActivity[p.id] ?? p.createdAt;
+    if (now - last >= cutoff) {
+      result.push({ personId: p.id, displayName: p.displayName, daysInactive: Math.floor((now - last) / 86400000) });
+    }
+  }
+  return result;
+}
+
 const MAINTENANCE_ID = 'maintenance';
 const MAINTENANCE_DEFAULT = { id: MAINTENANCE_ID, lastExportAt: null, lastBioPurgeAt: null, lastBioPurgeCount: 0 };
 
