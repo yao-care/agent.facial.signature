@@ -1,5 +1,9 @@
 import { listAllSnapshotIds, deleteSnapshot } from './face-store-opfs.js';
 
+const MS_PER_DAY = 86400000;
+const MAINTENANCE_ID = 'maintenance';
+const MAINTENANCE_DEFAULT = { id: MAINTENANCE_ID, lastExportAt: null, lastBioPurgeAt: null, lastBioPurgeCount: 0 };
+
 export async function scanOrphanSnapshots(db) {
   const allInOpfs = await listAllSnapshotIds();
   const allEvents = await db.getAll('events');
@@ -23,13 +27,13 @@ export async function scanInactiveBiometrics(db, { retentionDays, now = Date.now
       lastActivity[e.personId] = e.timestamp;
     }
   }
-  const cutoff = retentionDays * 86400000;
+  const cutoff = retentionDays * MS_PER_DAY;
   const result = [];
   for (const p of people) {
     if (!p.vectors || p.vectors.length === 0) continue; // 已無生物特徵
     const last = lastActivity[p.id] ?? p.createdAt;
     if (now - last >= cutoff) {
-      result.push({ personId: p.id, displayName: p.displayName, daysInactive: Math.floor((now - last) / 86400000) });
+      result.push({ personId: p.id, displayName: p.displayName, daysInactive: Math.floor((now - last) / MS_PER_DAY) });
     }
   }
   return result;
@@ -57,9 +61,6 @@ export async function purgeInactiveBiometrics(db, { retentionDays, now = Date.no
   await setMaintenance(db, { lastBioPurgeAt: now, lastBioPurgeCount: eligible.length });
   return { purgedCount: eligible.length, personIds: eligible.map((e) => e.personId) };
 }
-
-const MAINTENANCE_ID = 'maintenance';
-const MAINTENANCE_DEFAULT = { id: MAINTENANCE_ID, lastExportAt: null, lastBioPurgeAt: null, lastBioPurgeCount: 0 };
 
 export async function getMaintenance(db) {
   const stored = await db.get('settings', MAINTENANCE_ID);

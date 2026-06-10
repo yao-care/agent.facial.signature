@@ -47,6 +47,16 @@ describe('scanInactiveBiometrics', () => {
     expect(staleRow.displayName).toBe('退冊');
     db.close();
   });
+
+  it('未簽到剛好等於門檻天數者納入(>= 邊界)', async () => {
+    const db = await openFaceDb();
+    const vec = (a) => new Float32Array(a);
+    await db.put('people', { id:'edge', vectors:[vec([1,0,0])], modelVersion:'v1', displayName:'邊界', createdAt:NOW-400*DAY, updatedAt:NOW });
+    await db.put('events', { id:'ee', personId:'edge', timestamp:NOW-180*DAY, scenario:'s', snapshotId:'snapE' });
+    const eligible = await scanInactiveBiometrics(db, { retentionDays: 180, now: NOW });
+    expect(eligible.map(e => e.personId)).toContain('edge');
+    db.close();
+  });
 });
 
 describe('purgeInactiveBiometrics', () => {
