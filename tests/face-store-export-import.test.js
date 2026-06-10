@@ -14,6 +14,46 @@ beforeEach(() => {
 
 const vec = (a) => new Float32Array(a);
 
+describe('encrypted export → import round-trip', () => {
+  it('正確密碼可加密匯出再還原', async () => {
+    const db = await openFaceDb();
+    await createPerson(db, { vectors:[vec([1,0,0])], modelVersion:'v1', displayName:'密' });
+    const blob = await exportAll(db, { password: 'secret123' });
+    const head = new Uint8Array(await blob.arrayBuffer()).slice(0, 2);
+    expect(head[0] === 0x50 && head[1] === 0x4b).toBe(false); // 非 PK 標頭＝已加密
+
+    db.close();
+    indexedDB.deleteDatabase(DB_NAME);
+    navigator.storage._files.clear();
+    const db2 = await openFaceDb();
+    await importAll(db2, blob, { password: 'secret123' });
+    const people = await listPeople(db2);
+    expect(people[0].displayName).toBe('密');
+    expect(people[0].vectors[0][0]).toBeCloseTo(1, 6);
+    db2.close();
+  });
+
+  it('錯誤密碼匯入失敗', async () => {
+    const db = await openFaceDb();
+    await createPerson(db, { vectors:[vec([1,0,0])], modelVersion:'v1', displayName:'密' });
+    const blob = await exportAll(db, { password: 'right' });
+    db.close();
+    const db2 = await openFaceDb();
+    await expect(importAll(db2, blob, { password: 'wrong' })).rejects.toThrow();
+    db2.close();
+  });
+
+  it('加密檔缺密碼匯入報明確錯誤', async () => {
+    const db = await openFaceDb();
+    await createPerson(db, { vectors:[vec([1,0,0])], modelVersion:'v1', displayName:'密' });
+    const blob = await exportAll(db, { password: 'right' });
+    db.close();
+    const db2 = await openFaceDb();
+    await expect(importAll(db2, blob, {})).rejects.toThrow('encrypted backup requires password');
+    db2.close();
+  });
+});
+
 describe('export → import round-trip', () => {
   it('preserves people, events, watchlists, snapshots, vectors', async () => {
     const db = await openFaceDb();
