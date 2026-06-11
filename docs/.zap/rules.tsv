@@ -1,0 +1,22 @@
+# ZAP Rules Configuration for Facial Signature（agent.facial.signature，GitHub Pages）
+# 下列 ZAP 發現屬「HTTP 回應標頭層」，而本站部署於 GitHub Pages（不允許自訂回應標頭），
+# 且 sign.yao.care 為 GitHub Pages 自訂網域、未經 Cloudflare 前置，無法於 edge 注入標頭。
+# 經評估接受風險（站台純靜態前端、零雲端、無伺服器端逐人資料，生物特徵與報到資料
+# 全在 client 端 IndexedDB／OPFS，不出現在 HTTP 回應），降為 WARN：報告但不算 failure。
+# 風險接受紀錄與未來補強方案見受測 repo 的 SECURITY-HEADERS.md。
+# 格式：<rule_id>	<action>	<description>　參考：https://www.zaproxy.org/docs/docker/baseline-scan/#rules-file-format
+#
+# 註：CSP 內容層已部分強化——4 個 HTML（index/admin/example-checkin/example-alert）以
+#     <meta http-equiv="Content-Security-Policy"> 交付 CSP（default-src 'self'、object-src 'none'
+#     等，並放行 Human wasm 'wasm-unsafe-eval'、face/fflate blob worker）。但頁面仍含
+#     inline <style> 與 <script type=module>，必須保留 'unsafe-inline'，故 10055 仍列豁免；
+#     未來將 inline 外部化或改 hash 後即可移除 10055（參考 smart-func 的做法）。
+10020	WARN	(Missing Anti-clickjacking Header - GitHub Pages 無法設 X-Frame-Options；frame-ancestors 僅標頭層生效，meta 被瀏覽器忽略)
+10021	WARN	(X-Content-Type-Options Header Missing - GitHub Pages 無法設 HTTP 回應標頭)
+10035	WARN	(Strict-Transport-Security Header Not Set - GitHub Pages 自訂網域即使開 Enforce HTTPS 也不送 HSTS 標頭，僅做 HTTP→HTTPS 轉址)
+10038	WARN	(CSP Header Not Set - CSP 改以 <meta http-equiv> 交付；GitHub Pages 無法設此回應標頭)
+10055	WARN	(CSP unsafe-inline - 頁面 inline <style>/<script type=module> 仍需 'unsafe-inline'；純靜態前端、無伺服器端逐人資料，接受)
+10063	WARN	(Permissions Policy Header Not Set - GitHub Pages 無法設 HTTP 回應標頭)
+10098	WARN	(Cross-Domain Misconfiguration - Access-Control-Allow-Origin 由 GitHub CDN 固定回傳，不可變更)
+90004	WARN	(Cross-Origin-Embedder-Policy Header Missing - GitHub Pages 無法設 HTTP 回應標頭)
+90005	WARN	(Cross-Origin-Opener-Policy Header Missing - GitHub Pages 無法設 HTTP 回應標頭)
