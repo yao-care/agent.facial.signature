@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /$
+Allow: /index.html
+
+# 內部管理介面與功能 demo 頁，不開放搜尋引擎收錄
+Disallow: /admin.html
+Disallow: /example-checkin.html
+Disallow: /example-alert.html
+
+Sitemap: https://sign.yao.care/sitemap.xml
