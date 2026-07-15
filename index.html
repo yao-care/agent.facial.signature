@@ -4,9 +4,60 @@
   <meta charset="utf-8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; worker-src 'self' blob:; child-src 'self' blob:; connect-src 'self' blob:; media-src 'self' blob:; font-src 'self'; manifest-src 'self'; form-action 'self'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="manifest" href="./manifest.json">
-  <link rel="stylesheet" href="./shared/app.css">
   <title>長者友善無接觸報到</title>
+  <meta name="description" content="純前端人臉識別報到系統，為長照機構、日照中心、社區據點打造。人臉特徵與報到紀錄只存在本機瀏覽器，不上雲、不外傳，零安裝即可使用。">
+  <link rel="canonical" href="https://sign.yao.care/">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="長者友善無接觸報到">
+  <meta property="og:locale" content="zh_TW">
+  <meta property="og:url" content="https://sign.yao.care/">
+  <meta property="og:title" content="長者友善無接觸報到">
+  <meta property="og:description" content="純前端人臉識別報到系統，為長照機構、日照中心、社區據點打造。人臉特徵與報到紀錄只存在本機瀏覽器，不上雲、不外傳。">
+  <meta property="og:image" content="https://sign.yao.care/icons/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="長者友善無接觸報到 — 純前端、資料留本機、零雲端">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="長者友善無接觸報到">
+  <meta name="twitter:description" content="純前端人臉識別報到系統，為長照機構、日照中心、社區據點打造。人臉特徵與報到紀錄只存在本機瀏覽器，不上雲、不外傳。">
+  <meta name="twitter:image" content="https://sign.yao.care/icons/og-image.png">
+
+  <link rel="manifest" href="./manifest.json">
+  <link rel="preload" href="./shared/app.css" as="style">
+  <link rel="stylesheet" href="./shared/app.css">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "長者友善無接觸報到",
+    "url": "https://sign.yao.care/",
+    "description": "純前端人臉識別報到系統，為長照機構、日照中心、社區據點打造。人臉特徵與報到紀錄只存在本機瀏覽器，不上雲、不外傳。",
+    "applicationCategory": "HealthApplication",
+    "operatingSystem": "任何具備現代瀏覽器的裝置",
+    "browserRequirements": "需支援 WebAssembly 與 getUserMedia 的瀏覽器",
+    "inLanguage": "zh-TW",
+    "isAccessibleForFree": true,
+    "dateModified": "2026-07-15",
+    "image": "https://sign.yao.care/icons/og-image.png",
+    "featureList": [
+      "無接觸自動報到",
+      "人臉特徵與紀錄留存本機瀏覽器",
+      "名單分級警示",
+      "管理介面與備份匯出"
+    ],
+    "publisher": {
+      "@type": "Organization",
+      "name": "yao.care",
+      "url": "https://yao.care",
+      "sameAs": [
+        "https://github.com/yao-care/agent.facial.signature"
+      ]
+    }
+  }
+  </script>
   <style>
     body { margin: 0; background: var(--bg-base); color: var(--text-primary); }
     .hero {
@@ -140,12 +191,14 @@
         <li><strong>拍誰的臉，要先讓他知道並同意</strong>。建議在入口貼告示，建檔時系統會跳「是否同意」對話框讓對方點。</li>
         <li><strong>長者意識不清</strong>要家屬同意；<strong>未成年</strong>要監護人同意；<strong>員工</strong>建議在到職契約寫清楚。</li>
         <li>不照規矩做：台灣個資法可罰 5-50 萬甚至坐牢；歐洲 GDPR 上限是年營收 4%。</li>
+        <li>法規原文：<a href="https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=I0050021" rel="noopener external">個人資料保護法（全國法規資料庫）</a>、<a href="https://eur-lex.europa.eu/eli/reg/2016/679/oj" rel="noopener external">GDPR 條文（EUR-Lex）</a>。</li>
       </ul>
     </section>
   </main>
 
   <footer>
-    純前端 PWA · <a href="https://github.com/yao-care/agent.facial.signature">原始碼</a>
+    純前端 PWA · <a href="https://github.com/yao-care/agent.facial.signature">原始碼</a><br/>
+    最後更新：<time datetime="2026-07-15">2026-07-15</time>
   </footer>
 </body>
 </html>
