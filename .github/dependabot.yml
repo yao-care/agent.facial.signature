@@ -1,0 +1,11 @@
+version: 2
+updates:
+  # workflow 的 action 已釘 40 字元 commit SHA(防 tag 被無聲重指的供應鏈攻擊)。
+  # Dependabot 認得 `@<sha> # <version>` 格式,有新版時發 PR 換 SHA 並更新註解,
+  # 讓更新變成看得到、可審查的 PR,而不是 tag 在背後自己換掉。
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore(ci)"
