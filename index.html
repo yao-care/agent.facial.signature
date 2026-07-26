@@ -32,6 +32,7 @@
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
+    "@id": "https://sign.yao.care/#software",
     "name": "長者友善無接觸報到",
     "url": "https://sign.yao.care/",
     "description": "純前端人臉識別報到系統，為長照機構、日照中心、社區據點打造。人臉特徵與報到紀錄只存在本機瀏覽器，不上雲、不外傳。",
@@ -40,7 +41,7 @@
     "browserRequirements": "需支援 WebAssembly 與 getUserMedia 的瀏覽器",
     "inLanguage": "zh-TW",
     "isAccessibleForFree": true,
-    "dateModified": "2026-07-15",
+    "dateModified": "2026-07-26",
     "image": "https://sign.yao.care/icons/og-image.png",
     "featureList": [
       "無接觸自動報到",
@@ -48,14 +49,14 @@
       "名單分級警示",
       "管理介面與備份匯出"
     ],
-    "publisher": {
-      "@type": "Organization",
-      "name": "yao.care",
-      "url": "https://yao.care",
-      "sameAs": [
-        "https://github.com/yao-care/agent.facial.signature"
-      ]
-    }
+    "sameAs": [
+      "https://www.yao.care/care/sign/",
+      "https://github.com/yao-care/agent.facial.signature"
+    ],
+    "publisher": { "@id": "https://www.yao.care/#organization" },
+    "author": { "@id": "https://www.yao.care/#organization" },
+    "creator": { "@id": "https://www.yao.care/#organization" },
+    "copyrightHolder": { "@id": "https://www.yao.care/#organization" }
   }
   </script>
   <style>
@@ -130,6 +131,35 @@
     }
     footer a { color: var(--color-link); }
   </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": ["Organization", "MedicalOrganization"],
+        "@id": "https://www.yao.care/#organization",
+        "name": "yao.care",
+        "legalName": "藥提醒科技有限公司",
+        "alternateName": "藥提醒",
+        "url": "https://www.yao.care",
+        "taxID": "83620786",
+        "email": "service@yao.care",
+        "logo": { "@type": "ImageObject", "url": "https://www.yao.care/assets/images/logo.png" },
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "台灣大道二段220號12樓",
+          "addressLocality": "台中市西區",
+          "addressCountry": "TW"
+        },
+        "sameAs": [
+          "https://www.wikidata.org/wiki/Q140265007",
+          "https://github.com/yao-care",
+          "https://www.google.com/maps?cid=12025785010180313919"
+        ]
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
   <header class="hero">
@@ -197,8 +227,11 @@
   </main>
 
   <footer>
+    本系統由藥提醒科技有限公司（<a href="https://www.yao.care">yao.care</a>，統一編號 83620786，
+    地址：台中市西區台灣大道二段220號12樓）開發與維運。<br/>
+    產品說明見 <a href="https://www.yao.care/care/sign/">https://www.yao.care/care/sign/</a><br/>
     純前端 PWA · <a href="https://github.com/yao-care/agent.facial.signature">原始碼</a><br/>
-    最後更新：<time datetime="2026-07-15">2026-07-15</time>
+    最後更新：<time datetime="2026-07-26">2026-07-26</time>
   </footer>
 </body>
 </html>

@@ -82,38 +82,57 @@ describe('Twitter card', () => {
 });
 
 describe('JSON-LD 結構化資料', () => {
-  const raw = html.match(
-    /<script\s+type=["']application\/ld\+json["']\s*>([\s\S]*?)<\/script>/i,
-  )?.[1];
+  // 頁面有多個 ld+json 區塊：公司節點（@graph）與本站自己的 WebApplication。
+  const blocks = [...html.matchAll(/<script\s+type=["']application\/ld\+json["']\s*>([\s\S]*?)<\/script>/gi)]
+    .map((m) => m[1]);
+  const nodes = [];
+  const flat = (x) => {
+    if (Array.isArray(x)) x.forEach(flat);
+    else if (x && typeof x === 'object') {
+      if (x['@graph']) flat(x['@graph']);
+      else nodes.push(x);
+    }
+  };
+  for (const b of blocks) flat(JSON.parse(b));
+  const app = nodes.find((n) => n['@type'] === 'WebApplication');
+  const org = nodes.find((n) => n['@id'] === 'https://www.yao.care/#organization');
 
-  it('存在且為合法 JSON', () => {
-    expect(raw).toBeTruthy();
-    expect(() => JSON.parse(raw)).not.toThrow();
+  it('每個區塊都是合法 JSON', () => {
+    expect(blocks.length).toBeGreaterThanOrEqual(2);
+    for (const b of blocks) expect(() => JSON.parse(b)).not.toThrow();
   });
 
-  it('型別為 WebApplication，非 Article', () => {
-    const ld = JSON.parse(raw);
-    expect(ld['@context']).toBe('https://schema.org');
-    expect(ld['@type']).toBe('WebApplication');
+  it('公司節點在本頁定義，且用官網的 @id 與法律登記名稱', () => {
+    // @id 一律用官網網域；用 sign.yao.care/#organization 會裂出第二個公司實體。
+    expect(org).toBeTruthy();
+    expect(org['@type']).toEqual(['Organization', 'MedicalOrganization']);
+    expect(org.legalName).toBe('藥提醒科技有限公司');
+    expect(org.url).toBe('https://www.yao.care');
+    expect(org.taxID).toBe('83620786');
   });
 
-  it('publisher 為 Organization 且 sameAs 指向真實 repo', () => {
-    const ld = JSON.parse(raw);
-    expect(ld.publisher['@type']).toBe('Organization');
-    expect(ld.publisher.sameAs.length).toBeGreaterThanOrEqual(1);
-    for (const u of ld.publisher.sameAs) expect(u.startsWith('https://')).toBe(true);
+  it('型別為 WebApplication，非 Article，並帶自己的 @id', () => {
+    expect(app).toBeTruthy();
+    expect(app['@id']).toBe('https://sign.yao.care/#software');
+    expect(app.sameAs).toContain('https://www.yao.care/care/sign/');
+    expect(app.sameAs).toContain('https://github.com/yao-care/agent.facial.signature');
+  });
+
+  it('publisher 是對公司節點的純參照，不再內嵌整包 Organization', () => {
+    for (const key of ['publisher', 'author', 'creator', 'copyrightHolder']) {
+      expect(app[key], `缺少 ${key}`).toEqual({ '@id': 'https://www.yao.care/#organization' });
+    }
+    expect(nodes.filter((n) => String(n['@type']).includes('Organization') && !n['@id'])).toHaveLength(0);
   });
 
   it('url 與 image 與 meta 標籤一致，不自相矛盾', () => {
-    const ld = JSON.parse(raw);
-    expect(ld.url).toBe(meta('og:url'));
-    expect(ld.image).toBe(meta('og:image'));
+    expect(app.url).toBe(meta('og:url'));
+    expect(app.image).toBe(meta('og:image'));
   });
 
   it('dateModified 與頁面顯示的更新日期一致', () => {
-    const ld = JSON.parse(raw);
     const shown = html.match(/<time\s+datetime=["'](\d{4}-\d{2}-\d{2})["']/i)[1];
-    expect(ld.dateModified).toBe(shown);
+    expect(app.dateModified).toBe(shown);
   });
 });
 
