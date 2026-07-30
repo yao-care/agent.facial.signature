@@ -95,3 +95,7 @@
 ---
 
 > 給工程師／維運人員：技術架構、部署、開發與維護說明請見 [`CLAUDE.md`](CLAUDE.md) 與 [`docs/maintenance/`](docs/maintenance/)。
+
+---
+
+Maintained by Light. I build and maintain websites with AI as a service: [arthurs.tw](https://arthurs.tw/?utm_source=github&utm_medium=readme&utm_campaign=oss)
